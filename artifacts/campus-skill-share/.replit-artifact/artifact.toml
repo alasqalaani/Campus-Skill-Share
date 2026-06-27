@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "Campus Skill Share"
+version = "1.0.0"
+id = "artifacts/campus-skill-share"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21549
+
+[services.development]
+run = "pnpm --filter @workspace/campus-skill-share run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/campus-skill-share", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/campus-skill-share/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21549"
+BASE_PATH = "/"

@@ -1,0 +1,154 @@
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useLocation } from "wouter";
+import { useCreatePost } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { Link } from "wouter";
+
+const postSchema = z.object({
+  title: z.string().min(3, "Title must be at least 3 characters").max(150, "Title too long"),
+  category: z.enum(["Tutoring", "Design", "Music", "Tech", "Language", "Other"]),
+  description: z.string().min(20, "Description must be at least 20 characters").max(500, "Description too long"),
+  availability: z.string().max(200).optional(),
+  priceRate: z.string().max(100).optional(),
+});
+
+type PostFormValues = z.infer<typeof postSchema>;
+
+export default function NewPostPage() {
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const createPost = useCreatePost();
+
+  const form = useForm<PostFormValues>({
+    resolver: zodResolver(postSchema),
+    defaultValues: {
+      title: "",
+      category: "Tutoring",
+      description: "",
+      availability: "",
+      priceRate: "",
+    },
+  });
+
+  const onSubmit = (data: PostFormValues) => {
+    createPost.mutate({ data }, {
+      onSuccess: () => {
+        toast({
+          title: "Skill posted!",
+          description: "Your skill is now visible on the feed.",
+        });
+        setLocation("/feed");
+      },
+      onError: (err) => {
+        toast({
+          title: "Failed to post",
+          description: err.message || "An unexpected error occurred.",
+          variant: "destructive",
+        });
+      }
+    });
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto animate-in fade-in duration-500">
+      <div className="mb-8">
+        <Link href="/feed" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back to Feed
+        </Link>
+        <h1 className="text-3xl font-display font-bold">Post a Skill</h1>
+        <p className="text-muted-foreground mt-1">Share your expertise with the campus community.</p>
+      </div>
+
+      <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="title" className="text-sm font-semibold">Skill Title *</label>
+            <input
+              id="title"
+              {...form.register("title")}
+              placeholder="e.g. Intro to Python Tutoring, Beginner Guitar Lessons"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            {form.formState.errors.title && (
+              <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="category" className="text-sm font-semibold">Category *</label>
+            <select
+              id="category"
+              {...form.register("category")}
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none"
+            >
+              <option value="Tutoring">Tutoring</option>
+              <option value="Design">Design</option>
+              <option value="Music">Music</option>
+              <option value="Tech">Tech</option>
+              <option value="Language">Language</option>
+              <option value="Other">Other</option>
+            </select>
+            {form.formState.errors.category && (
+              <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="description" className="text-sm font-semibold">Description *</label>
+            <textarea
+              id="description"
+              {...form.register("description")}
+              rows={5}
+              placeholder="What exactly are you offering? What should someone expect? Mention your experience level."
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+            />
+            {form.formState.errors.description && (
+              <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <label htmlFor="availability" className="text-sm font-semibold">Availability (Optional)</label>
+              <input
+                id="availability"
+                {...form.register("availability")}
+                placeholder="e.g. Tue/Thu evenings, Weekends"
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="priceRate" className="text-sm font-semibold">Price/Rate (Optional)</label>
+              <input
+                id="priceRate"
+                {...form.register("priceRate")}
+                placeholder="e.g. $15/hr, Free, Trade for coffee"
+                className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-border/50">
+            <button
+              type="submit"
+              disabled={createPost.isPending}
+              className="w-full bg-primary text-primary-foreground font-bold text-lg py-4 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
+            >
+              {createPost.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Posting...
+                </>
+              ) : "Post Skill"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
