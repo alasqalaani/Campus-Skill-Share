@@ -9,11 +9,15 @@ import { useQueryClient } from "@tanstack/react-query";
 const BASE_CATEGORIES = ['Tutoring', 'Design', 'Music', 'Tech', 'Language', 'Other'];
 
 export default function FeedPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [category, setCategory] = useState("All");
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) setLocation("/");
+  }, [authLoading, isAuthenticated, setLocation]);
 
   // Debounce search
   useEffect(() => {
@@ -34,10 +38,7 @@ export default function FeedPage() {
     query: { enabled: isAuthenticated, queryKey: getGetPostStatsQueryKey() }
   });
 
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  if (authLoading || !isAuthenticated) return null;
 
   // Merge base categories with actual stats to show counts
   const getCategoryCount = (catName: string) => {

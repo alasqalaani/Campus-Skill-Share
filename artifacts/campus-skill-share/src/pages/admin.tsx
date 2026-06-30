@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 
 export default function AdminDashboard() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -20,6 +20,10 @@ export default function AdminDashboard() {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
     return () => clearTimeout(timer);
   }, [search]);
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) setLocation("/");
+  }, [isLoading, isAuthenticated, setLocation]);
 
   const { data: profile, isLoading: profileLoading } = useGetMyProfile();
 
@@ -34,10 +38,7 @@ export default function AdminDashboard() {
 
   const deletePost = useDeletePost();
 
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  if (isLoading || !isAuthenticated) return null;
 
   if (profileLoading) return <div className="text-center py-20">Loading admin...</div>;
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetMyProfile, useUpdateMyProfile } from "@workspace/api-client-react";
 import { useLocation } from "wouter";
@@ -8,12 +8,16 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetMyProfileQueryKey } from "@workspace/api-client-react";
 
 export default function ProfilePage() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  
-  const { data: profile, isLoading } = useGetMyProfile({
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) setLocation("/");
+  }, [authLoading, isAuthenticated, setLocation]);
+
+  const { data: profile, isLoading: profileLoading } = useGetMyProfile({
     query: { enabled: isAuthenticated, queryKey: getGetMyProfileQueryKey() }
   });
 
@@ -49,12 +53,9 @@ export default function ProfilePage() {
     });
   };
 
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  if (authLoading || !isAuthenticated) return null;
 
-  if (isLoading) return <div className="text-center py-20">Loading profile...</div>;
+  if (profileLoading) return <div className="text-center py-20">Loading profile...</div>;
 
   return (
     <div className="max-w-2xl mx-auto animate-in fade-in duration-500">

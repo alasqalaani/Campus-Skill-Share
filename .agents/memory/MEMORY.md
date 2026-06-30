@@ -1,3 +1,4 @@
 - [Extended Replit Auth user model](replit-auth-extended-user.md) — when adding role/displayName to req.user, define SessionUser in lib/auth.ts and re-export as AppUser from authMiddleware; avoids circular deps.
+- [React auth guard pattern](react-auth-guard-pattern.md) — never call setLocation() during render; use useEffect + check isLoading before redirecting or causes a 3x/sec remount loop.
 - [TS ?? and || mixing rule](ts-nullish-coalescing.md) — cannot mix ?? and || without parens in strict TS; use a helper function like resolveDisplayName() instead of inline chains.
 - [replit-auth-web lib tsconfig](replit-auth-web-tsconfig.md) — replit-auth-web lib needs composite:true, vite devDep, and types:["vite/client"] for import.meta.env to typecheck in tsc --build.

@@ -1,21 +1,23 @@
 import { useListConversations, getListConversationsQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { MessageSquare, ChevronRight } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
 export default function ChatListPage() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) setLocation("/");
+  }, [authLoading, isAuthenticated, setLocation]);
 
   const { data, isLoading } = useListConversations({
     query: { enabled: isAuthenticated, queryKey: getListConversationsQueryKey() }
   });
 
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  if (authLoading || !isAuthenticated) return null;
 
   return (
     <div className="max-w-4xl mx-auto animate-in fade-in duration-500">

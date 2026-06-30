@@ -1,6 +1,7 @@
 import { useGetPost, getGetPostQueryKey } from "@workspace/api-client-react";
 import { Link, useParams, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
+import { useEffect } from "react";
 import { ArrowLeft, Clock, MessageSquare, Tag, Calendar, User } from "lucide-react";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { format } from "date-fns";
@@ -8,17 +9,18 @@ import { format } from "date-fns";
 export default function PostDetailPage() {
   const params = useParams();
   const id = params.id as string;
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) setLocation("/");
+  }, [authLoading, isAuthenticated, setLocation]);
 
   const { data: post, isLoading, error } = useGetPost(id, {
     query: { enabled: !!id && isAuthenticated, queryKey: getGetPostQueryKey(id) }
   });
 
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  if (authLoading || !isAuthenticated) return null;
 
   if (isLoading) {
     return (

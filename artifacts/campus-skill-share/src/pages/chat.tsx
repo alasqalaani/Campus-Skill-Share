@@ -9,7 +9,7 @@ import { useQueryClient } from "@tanstack/react-query";
 export default function ChatPage() {
   const params = useParams();
   const otherUserId = params.userId as string;
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [, setLocation] = useLocation();
   const [content, setContent] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -24,6 +24,10 @@ export default function ChatPage() {
     }
   });
 
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) setLocation("/");
+  }, [authLoading, isAuthenticated, setLocation]);
+
   const sendMessage = useSendMessage();
 
   const scrollToBottom = () => {
@@ -34,10 +38,7 @@ export default function ChatPage() {
     scrollToBottom();
   }, [data?.messages]);
 
-  if (!isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  if (authLoading || !isAuthenticated) return null;
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
