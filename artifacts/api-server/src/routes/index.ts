@@ -5,6 +5,7 @@ import postsRouter from "./posts";
 import messagesRouter from "./messages";
 import usersRouter from "./users";
 import adminRouter from "./admin";
+import chatbotRouter from "../chatbot";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use("/posts", postsRouter);
 router.use("/messages", messagesRouter);
 router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
+router.use("/chatbot", chatbotRouter);
 
 export default router;
