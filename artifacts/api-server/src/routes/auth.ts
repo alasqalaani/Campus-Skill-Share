@@ -99,6 +99,11 @@ function getSafeErrorMetadata(error: unknown) {
   };
 }
 
+function getAdminEmails(): Set<string> {
+  const raw = process.env.ADMIN_EMAILS ?? '';
+  return new Set(raw.split(',').map((e) => e.trim().toLowerCase()).filter(Boolean));
+}
+
 async function upsertUser(claims: Record<string, unknown>): Promise<AppUser> {
   const userData = {
     id: claims.sub as string,
@@ -110,9 +115,17 @@ async function upsertUser(claims: Record<string, unknown>): Promise<AppUser> {
       | null,
   };
 
+  const adminEmails = getAdminEmails();
+  const isAdmin = userData.email
+    ? adminEmails.has(userData.email.toLowerCase())
+    : false;
+
   const [user] = await db
     .insert(usersTable)
-    .values(userData)
+    .values({
+      ...userData,
+      ...(isAdmin ? { role: 'admin' as const } : {}),
+    })
     .onConflictDoUpdate({
       target: usersTable.id,
       set: {
@@ -121,6 +134,8 @@ async function upsertUser(claims: Record<string, unknown>): Promise<AppUser> {
         lastName: userData.lastName,
         profileImageUrl: userData.profileImageUrl,
         updatedAt: new Date(),
+        // Promote to admin if in the list; never demote an existing admin
+        ...(isAdmin ? { role: 'admin' as const } : {}),
       },
     })
     .returning();
