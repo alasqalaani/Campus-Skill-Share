@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetMyProfile, getGetMyProfileQueryKey } from "@workspace/api-client-react";
 import { BookOpen, LogOut, User, PlusCircle, MessageSquare } from "lucide-react";
+import { ChatbotWidget } from "../ChatbotWidget";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { isAuthenticated, user, login, logout } = useAuth();
@@ -70,6 +71,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
           <p className="font-display">© {new Date().getFullYear()} Campus Skill Share. Built for students.</p>
         </div>
       </footer>
+      <ChatbotWidget/>
     </div>
   );
 }
