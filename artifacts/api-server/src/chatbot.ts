@@ -20,6 +20,7 @@ router.post("/", async (req, res) => {
       }),
     });
     const data = (await response.json()) as any;
+    console.log("Chatbot response:", data);
     res.json({ reply: data.content[0].text });
   } catch (error) {
     console.error("Chatbot error details:", error);
