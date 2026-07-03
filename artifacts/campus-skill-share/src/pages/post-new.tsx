@@ -8,11 +8,25 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "wouter";
 
 const postSchema = z.object({
-  title: z.string().min(3, "Title must be at least 3 characters").max(150, "Title too long"),
-  category: z.enum(["Tutoring", "Design", "Music", "Tech", "Language", "Other"]),
-  description: z.string().min(20, "Description must be at least 20 characters").max(500, "Description too long"),
+  title: z
+    .string()
+    .min(3, "Title must be at least 3 characters")
+    .max(150, "Title too long"),
+  category: z.enum([
+    "Tutoring",
+    "Design",
+    "Music",
+    "Tech",
+    "Language",
+    "Other",
+  ]),
+  description: z
+    .string()
+    .min(20, "Description must be at least 20 characters")
+    .max(500, "Description too long"),
   availability: z.string().max(200).optional(),
   priceRate: z.string().max(100).optional(),
+  university: z.string().min(1, "University is required"),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -30,43 +44,54 @@ export default function NewPostPage() {
       description: "",
       availability: "",
       priceRate: "",
+      university: "",
     },
   });
 
   const onSubmit = (data: PostFormValues) => {
-    createPost.mutate({ data }, {
-      onSuccess: () => {
-        toast({
-          title: "Skill posted!",
-          description: "Your skill is now visible on the feed.",
-        });
-        setLocation("/feed");
+    createPost.mutate(
+      { data },
+      {
+        onSuccess: () => {
+          toast({
+            title: "Skill posted!",
+            description: "Your skill is now visible on the feed.",
+          });
+          setLocation("/feed");
+        },
+        onError: (err) => {
+          toast({
+            title: "Failed to post",
+            description: err.message || "An unexpected error occurred.",
+            variant: "destructive",
+          });
+        },
       },
-      onError: (err) => {
-        toast({
-          title: "Failed to post",
-          description: err.message || "An unexpected error occurred.",
-          variant: "destructive",
-        });
-      }
-    });
+    );
   };
 
   return (
     <div className="max-w-2xl mx-auto animate-in fade-in duration-500">
       <div className="mb-8">
-        <Link href="/feed" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors">
+        <Link
+          href="/feed"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-4 transition-colors"
+        >
           <ArrowLeft className="w-4 h-4 mr-1" />
           Back to Feed
         </Link>
         <h1 className="text-3xl font-display font-bold">Post a Skill</h1>
-        <p className="text-muted-foreground mt-1">Share your expertise with the campus community.</p>
+        <p className="text-muted-foreground mt-1">
+          Share your expertise with the campus community.
+        </p>
       </div>
 
       <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="space-y-2">
-            <label htmlFor="title" className="text-sm font-semibold">Skill Title *</label>
+            <label htmlFor="title" className="text-sm font-semibold">
+              Skill Title *
+            </label>
             <input
               id="title"
               {...form.register("title")}
@@ -74,12 +99,32 @@ export default function NewPostPage() {
               className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
             />
             {form.formState.errors.title && (
-              <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.title.message}
+              </p>
+            )}
+          </div>
+          <div className="space-y-2">
+            <label htmlFor="university" className="text-sm font-semibold">
+              University *
+            </label>
+            <input
+              id="university"
+              {...form.register("university")}
+              placeholder="e.g. University of Toronto"
+              className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
+            />
+            {form.formState.errors.university && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.university.message}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="category" className="text-sm font-semibold">Category *</label>
+            <label htmlFor="category" className="text-sm font-semibold">
+              Category *
+            </label>
             <select
               id="category"
               {...form.register("category")}
@@ -93,12 +138,16 @@ export default function NewPostPage() {
               <option value="Other">Other</option>
             </select>
             {form.formState.errors.category && (
-              <p className="text-sm text-destructive">{form.formState.errors.category.message}</p>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.category.message}
+              </p>
             )}
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="description" className="text-sm font-semibold">Description *</label>
+            <label htmlFor="description" className="text-sm font-semibold">
+              Description *
+            </label>
             <textarea
               id="description"
               {...form.register("description")}
@@ -107,13 +156,17 @@ export default function NewPostPage() {
               className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
             />
             {form.formState.errors.description && (
-              <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>
+              <p className="text-sm text-destructive">
+                {form.formState.errors.description.message}
+              </p>
             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label htmlFor="availability" className="text-sm font-semibold">Availability (Optional)</label>
+              <label htmlFor="availability" className="text-sm font-semibold">
+                Availability (Optional)
+              </label>
               <input
                 id="availability"
                 {...form.register("availability")}
@@ -121,9 +174,11 @@ export default function NewPostPage() {
                 className="w-full px-4 py-2.5 rounded-xl border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
             </div>
-            
+
             <div className="space-y-2">
-              <label htmlFor="priceRate" className="text-sm font-semibold">Price/Rate (Optional)</label>
+              <label htmlFor="priceRate" className="text-sm font-semibold">
+                Price/Rate (Optional)
+              </label>
               <input
                 id="priceRate"
                 {...form.register("priceRate")}
@@ -144,7 +199,9 @@ export default function NewPostPage() {
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Posting...
                 </>
-              ) : "Post Skill"}
+              ) : (
+                "Post Skill"
+              )}
             </button>
           </div>
         </form>
