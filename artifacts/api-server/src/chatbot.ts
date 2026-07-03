@@ -5,37 +5,33 @@ router.post("/", async (req, res) => {
   try {
     const { message } = req.body;
     const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=" +
-        process.env.GEMINI_API_KEY,
+      "https://api.groq.com/openai/v1/chat/completions",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          Authorization: "Bearer " + process.env.GROQ_API_KEY,
         },
         body: JSON.stringify({
-          system_instruction: {
-            parts: [
-              {
-                text: "You are a helpful assistant for Campus Skill Share, a university peer skill sharing platform. Help students with posting skills, searching the feed, messaging others, and registering.",
-              },
-            ],
-          },
-          contents: [
+          model: "llama-3.3-70b-versatile",
+          messages: [
             {
-              role: "user",
-              parts: [{ text: message }],
+              role: "system",
+              content:
+                "You are a helpful assistant for Campus Skill Share, a university peer skill sharing platform. Help students with posting skills, searching the feed, messaging others, and registering.",
             },
+            { role: "user", content: message },
           ],
         }),
       },
     );
     const data = (await response.json()) as any;
-    console.log("Gemini response:", JSON.stringify(data));
+    console.log("Groq response:", JSON.stringify(data));
     if (!response.ok) {
       return res.status(500).json({ error: "Chatbot error", details: data });
     }
     const reply =
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      data.choices?.[0]?.message?.content ||
       "Sorry, I couldn't generate a response.";
     res.json({ reply });
   } catch (error) {
