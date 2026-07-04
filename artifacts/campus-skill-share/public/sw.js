@@ -1,4 +1,4 @@
-const CACHE_NAME = "skillet-v2";
+const CACHE_NAME = "skillet-v3";
 const urlsToCache = ["/", "/manifest.json", "/favicon.svg"];
 
 self.addEventListener("install", (event) => {
@@ -31,7 +31,14 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     fetch(event.request)
-      .then((response) => response)
+      .then((response) => {
+        // Save a copy of successful responses for offline use later
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseClone);
+        });
+        return response;
+      })
       .catch(() =>
         caches.match(event.request).then((cached) => {
           return (
