@@ -1,0 +1,16 @@
+{
+  "name": "Skillet",
+  "short_name": "Skillet",
+  "description": "A peer-to-peer skill sharing platform for university students.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#FF3C00",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}
