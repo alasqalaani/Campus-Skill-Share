@@ -21,11 +21,20 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch: serve from cache when offline, fallback to network
+// Fetch: try network first, fall back to cache only if network fails
 self.addEventListener("fetch", (event) => {
+  // Only handle simple page loads/GET requests
+  if (event.request.method !== "GET") {
+    return;
+  }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      return cached || fetch(event.request);
-    }),
+    fetch(event.request)
+      .then((response) => {
+        return response;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      }),
   );
 });
