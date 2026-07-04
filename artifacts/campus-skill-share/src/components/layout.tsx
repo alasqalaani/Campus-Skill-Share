@@ -36,7 +36,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               <BookOpen className="w-5 h-5" />
             </div>
             <span className="font-display font-bold text-xl tracking-tight">
-              Campus Skill Share
+              Skillet
             </span>
           </Link>
 
