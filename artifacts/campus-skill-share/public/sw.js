@@ -1,4 +1,4 @@
-const CACHE_NAME = "skillet-v1";
+const CACHE_NAME = "skillet-v2";
 const urlsToCache = ["/", "/manifest.json", "/favicon.svg"];
 
 // Install: cache basic files
@@ -21,20 +21,22 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Fetch: try network first, fall back to cache only if network fails
+// Fetch: try network first, fall back to cache if offline
 self.addEventListener("fetch", (event) => {
-  // Only handle simple page loads/GET requests
   if (event.request.method !== "GET") {
     return;
   }
 
+  // For page navigations (like /feed, /chats, /admin), fall back to cached index.html
+  if (event.request.mode === "navigate") {
+    event.respondWith(fetch(event.request).catch(() => caches.match("/")));
+    return;
+  }
+
+  // For everything else (JS, CSS, images), try network then cache
   event.respondWith(
     fetch(event.request)
-      .then((response) => {
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request);
-      }),
+      .then((response) => response)
+      .catch(() => caches.match(event.request)),
   );
 });
