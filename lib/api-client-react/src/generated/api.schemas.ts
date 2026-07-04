@@ -91,6 +91,8 @@ export interface Post {
   availability?: string | null;
   /** @nullable */
   priceRate?: string | null;
+  /** @nullable */
+  university?: string | null;
   createdAt: string;
   author: PostAuthor;
 }

@@ -122,6 +122,7 @@ router.get("/:postId", async (req, res) => {
       description: postsTable.description,
       availability: postsTable.availability,
       priceRate: postsTable.priceRate,
+      university: postsTable.university,
       createdAt: postsTable.createdAt,
       authorId: usersTable.id,
       authorDisplayName: usersTable.displayName,

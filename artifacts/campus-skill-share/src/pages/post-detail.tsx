@@ -94,6 +94,15 @@ export default function PostDetailPage() {
                     <p className="text-muted-foreground text-sm">{post.priceRate}</p>
                   </div>
                 )}
+                {post.university && (
+                  <div className="bg-secondary/50 rounded-2xl p-5 border border-border/50">
+                    <div className="flex items-center gap-2 text-foreground font-semibold mb-1">
+                      <User className="w-4 h-4 text-primary" />
+                      University
+                    </div>
+                    <p className="text-muted-foreground text-sm">{post.university}</p>
+                  </div>
+                )}
               </div>
             </div>
 
