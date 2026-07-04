@@ -8,12 +8,28 @@ const router = Router();
 
 // GET /posts - list posts with optional search/category filter
 router.get("/", async (req, res) => {
-  const { search, category, limit = "50", offset = "0" } = req.query as Record<string, string>;
+  const {
+    search,
+    category,
+    limit = "50",
+    offset = "0",
+  } = req.query as Record<string, string>;
 
   const conditions: ReturnType<typeof eq>[] = [];
 
   if (category && category !== "all") {
-    conditions.push(eq(postsTable.category, category as "Tutoring" | "Design" | "Music" | "Tech" | "Language" | "Other"));
+    conditions.push(
+      eq(
+        postsTable.category,
+        category as
+          | "Tutoring"
+          | "Design"
+          | "Music"
+          | "Tech"
+          | "Language"
+          | "Other",
+      ),
+    );
   }
 
   let postsQuery = db
@@ -24,6 +40,7 @@ router.get("/", async (req, res) => {
       description: postsTable.description,
       availability: postsTable.availability,
       priceRate: postsTable.priceRate,
+      university: postsTable.university,
       createdAt: postsTable.createdAt,
       authorId: usersTable.id,
       authorDisplayName: usersTable.displayName,
@@ -37,13 +54,17 @@ router.get("/", async (req, res) => {
     .limit(parseInt(limit))
     .offset(parseInt(offset));
 
-  const rawPosts = conditions.length > 0
-    ? await postsQuery.where(and(...conditions))
-    : await postsQuery;
+  const rawPosts =
+    conditions.length > 0
+      ? await postsQuery.where(and(...conditions))
+      : await postsQuery;
 
   const posts = rawPosts
-    .filter((p) =>
-      !search || p.title.toLowerCase().includes(search.toLowerCase()) || p.description.toLowerCase().includes(search.toLowerCase())
+    .filter(
+      (p) =>
+        !search ||
+        p.title.toLowerCase().includes(search.toLowerCase()) ||
+        p.description.toLowerCase().includes(search.toLowerCase()),
     )
     .map((p) => ({
       id: p.id,
@@ -52,10 +73,15 @@ router.get("/", async (req, res) => {
       description: p.description,
       availability: p.availability ?? null,
       priceRate: p.priceRate ?? null,
+      university: p.university ?? null,
       createdAt: p.createdAt.toISOString(),
       author: {
         id: p.authorId,
-        displayName: resolveDisplayName(p.authorDisplayName, p.authorFirstName, p.authorLastName),
+        displayName: resolveDisplayName(
+          p.authorDisplayName,
+          p.authorFirstName,
+          p.authorLastName,
+        ),
         profileImageUrl: p.authorProfileImageUrl ?? null,
       },
     }));
@@ -76,7 +102,10 @@ router.get("/stats", async (req, res) => {
   const total = stats.reduce((sum, s) => sum + Number(s.count), 0);
 
   res.json({
-    categories: stats.map((s) => ({ category: s.category, count: Number(s.count) })),
+    categories: stats.map((s) => ({
+      category: s.category,
+      count: Number(s.count),
+    })),
     total,
   });
 });
@@ -117,10 +146,15 @@ router.get("/:postId", async (req, res) => {
     description: p.description,
     availability: p.availability ?? null,
     priceRate: p.priceRate ?? null,
+    university: p.university ?? null,
     createdAt: p.createdAt.toISOString(),
     author: {
       id: p.authorId,
-      displayName: resolveDisplayName(p.authorDisplayName, p.authorFirstName, p.authorLastName),
+      displayName: resolveDisplayName(
+        p.authorDisplayName,
+        p.authorFirstName,
+        p.authorLastName,
+      ),
       profileImageUrl: p.authorProfileImageUrl ?? null,
     },
   });
@@ -133,19 +167,31 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const { title, category, description, availability, priceRate } = req.body;
+  const { title, category, description, availability, priceRate, university } =
+    req.body;
 
   if (!title || !category || !description) {
-    res.status(400).json({ error: "title, category, and description are required" });
+    res
+      .status(400)
+      .json({ error: "title, category, and description are required" });
     return;
   }
 
   if (description.length < 20) {
-    res.status(400).json({ error: "Description must be at least 20 characters" });
+    res
+      .status(400)
+      .json({ error: "Description must be at least 20 characters" });
     return;
   }
 
-  const validCategories = ["Tutoring", "Design", "Music", "Tech", "Language", "Other"];
+  const validCategories = [
+    "Tutoring",
+    "Design",
+    "Music",
+    "Tech",
+    "Language",
+    "Other",
+  ];
   if (!validCategories.includes(category)) {
     res.status(400).json({ error: "Invalid category" });
     return;
@@ -160,6 +206,7 @@ router.post("/", async (req, res) => {
       description,
       availability: availability || null,
       priceRate: priceRate || null,
+      university: university || null,
     })
     .returning();
 
@@ -168,13 +215,18 @@ router.post("/", async (req, res) => {
     id: post.id,
     title: post.title,
     category: post.category,
+    university: post.university,
     description: post.description,
     availability: post.availability ?? null,
     priceRate: post.priceRate ?? null,
     createdAt: post.createdAt.toISOString(),
     author: {
       id: user.id,
-      displayName: resolveDisplayName(user.displayName, user.firstName, user.lastName),
+      displayName: resolveDisplayName(
+        user.displayName,
+        user.firstName,
+        user.lastName,
+      ),
       profileImageUrl: user.profileImageUrl ?? null,
     },
   });
@@ -188,7 +240,10 @@ router.delete("/:postId", async (req, res) => {
   }
 
   const { postId } = req.params;
-  const rows = await db.select().from(postsTable).where(eq(postsTable.id, postId));
+  const rows = await db
+    .select()
+    .from(postsTable)
+    .where(eq(postsTable.id, postId));
 
   if (rows.length === 0) {
     res.status(404).json({ error: "Post not found" });
