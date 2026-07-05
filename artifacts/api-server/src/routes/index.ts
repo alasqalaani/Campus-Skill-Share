@@ -6,6 +6,7 @@ import messagesRouter from "./messages";
 import usersRouter from "./users";
 import adminRouter from "./admin";
 import chatbotRouter from "../chatbot";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use("/messages", messagesRouter);
 router.use("/users", usersRouter);
 router.use("/admin", adminRouter);
 router.use("/chatbot", chatbotRouter);
+router.use("/push", pushRouter);
 
 export default router;

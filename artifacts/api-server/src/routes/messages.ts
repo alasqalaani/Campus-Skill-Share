@@ -3,8 +3,16 @@ import { db } from "@workspace/db";
 import { messagesTable, usersTable } from "@workspace/db";
 import { eq, or, and, desc } from "drizzle-orm";
 import { resolveDisplayName } from "../lib/displayName";
+import webpush from "web-push";
+import { pushSubscriptionsTable } from "@workspace/db";
 
 const router = Router();
+
+webpush.setVapidDetails(
+  "mailto:admin@skillet.app",
+  process.env.VAPID_PUBLIC_KEY!,
+  process.env.VAPID_PRIVATE_KEY!,
+);
 
 // GET /messages/conversations - list conversations
 router.get("/conversations", async (req, res) => {
@@ -22,13 +30,13 @@ router.get("/conversations", async (req, res) => {
     .where(
       or(
         eq(messagesTable.senderId, userId),
-        eq(messagesTable.receiverId, userId)
-      )
+        eq(messagesTable.receiverId, userId),
+      ),
     )
     .orderBy(desc(messagesTable.createdAt));
 
   // Group by conversation partner
-  const conversationMap = new Map<string, typeof allMessages[0]>();
+  const conversationMap = new Map<string, (typeof allMessages)[0]>();
   for (const msg of allMessages) {
     const partnerId = msg.senderId === userId ? msg.receiverId : msg.senderId;
     if (!conversationMap.has(partnerId)) {
@@ -46,9 +54,7 @@ router.get("/conversations", async (req, res) => {
   const partners = await db
     .select()
     .from(usersTable)
-    .where(
-      or(...partnerIds.map((id) => eq(usersTable.id, id)))
-    );
+    .where(or(...partnerIds.map((id) => eq(usersTable.id, id))));
 
   const partnerMap = new Map(partners.map((p) => [p.id, p]));
 
@@ -60,7 +66,11 @@ router.get("/conversations", async (req, res) => {
       return {
         otherUser: {
           id: partner.id,
-          displayName: resolveDisplayName(partner.displayName, partner.firstName, partner.lastName),
+          displayName: resolveDisplayName(
+            partner.displayName,
+            partner.firstName,
+            partner.lastName,
+          ),
           profileImageUrl: partner.profileImageUrl ?? null,
         },
         lastMessage: {
@@ -93,9 +103,15 @@ router.get("/:otherUserId", async (req, res) => {
     .from(messagesTable)
     .where(
       or(
-        and(eq(messagesTable.senderId, userId), eq(messagesTable.receiverId, otherUserId)),
-        and(eq(messagesTable.senderId, otherUserId), eq(messagesTable.receiverId, userId))
-      )
+        and(
+          eq(messagesTable.senderId, userId),
+          eq(messagesTable.receiverId, otherUserId),
+        ),
+        and(
+          eq(messagesTable.senderId, otherUserId),
+          eq(messagesTable.receiverId, userId),
+        ),
+      ),
     )
     .orderBy(messagesTable.createdAt);
 
@@ -125,7 +141,9 @@ router.post("/", async (req, res) => {
   }
 
   if (content.length < 1 || content.length > 2000) {
-    res.status(400).json({ error: "content must be between 1 and 2000 characters" });
+    res
+      .status(400)
+      .json({ error: "content must be between 1 and 2000 characters" });
     return;
   }
 
@@ -137,6 +155,30 @@ router.post("/", async (req, res) => {
       content,
     })
     .returning();
+
+  // Send a push notification to the receiver, if they have a subscription
+  const subscriptions = await db
+    .select()
+    .from(pushSubscriptionsTable)
+    .where(eq(pushSubscriptionsTable.userId, receiverId));
+
+  for (const sub of subscriptions) {
+    webpush
+      .sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.p256dh, auth: sub.auth },
+        },
+        JSON.stringify({
+          title: "New message on Skillet",
+          body: content.slice(0, 100),
+          url: "/chats",
+        }),
+      )
+      .catch((err) => {
+        console.error("Push notification failed:", err);
+      });
+  }
 
   res.status(201).json({
     id: message.id,

@@ -48,3 +48,47 @@ self.addEventListener("fetch", (event) => {
       ),
   );
 });
+
+// Push: display a notification when one arrives
+self.addEventListener("push", (event) => {
+  let data = {
+    title: "New message",
+    body: "You have a new message on Skillet",
+  };
+
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data.body = event.data.text();
+    }
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || "Skillet", {
+      body: data.body || "You have a new notification",
+      icon: "/favicon.svg",
+      badge: "/favicon.svg",
+      data: { url: data.url || "/chats" },
+    }),
+  );
+});
+
+// Notification click: open the relevant page
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/chats";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window" }).then((clientsList) => {
+      for (const client of clientsList) {
+        if (client.url.includes(url) && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(url);
+      }
+    }),
+  );
+});
