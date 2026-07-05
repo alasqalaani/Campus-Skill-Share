@@ -15,6 +15,15 @@ export default function ChatListPage() {
   const [notifStatus, setNotifStatus] = useState<
     "idle" | "asking" | "enabled" | "denied"
   >("idle");
+  useEffect(() => {
+    if (typeof Notification !== "undefined") {
+      if (Notification.permission === "granted") {
+        setNotifStatus("enabled");
+      } else if (Notification.permission === "denied") {
+        setNotifStatus("denied");
+      }
+    }
+  }, []);
 
   function urlBase64ToUint8Array(base64String: string) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
