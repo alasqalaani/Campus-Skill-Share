@@ -6,7 +6,7 @@ import { eq } from "drizzle-orm";
 const router = Router();
 // GET /push/vapid-public-key - expose public key to frontend
 router.get("/vapid-public-key", (req, res) => {
-  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+  res.json({ publicKey: process.env.VAPID_PUBLIC_KEY!.trim() });
 });
 
 // POST /push/subscribe - save a user's push subscription

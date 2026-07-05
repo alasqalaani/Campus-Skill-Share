@@ -10,8 +10,8 @@ const router = Router();
 
 webpush.setVapidDetails(
   "mailto:admin@skillet.app",
-  process.env.VAPID_PUBLIC_KEY!,
-  process.env.VAPID_PRIVATE_KEY!,
+  process.env.VAPID_PUBLIC_KEY!.trim(),
+  process.env.VAPID_PRIVATE_KEY!.trim(),
 );
 
 // GET /messages/conversations - list conversations
