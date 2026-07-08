@@ -45,8 +45,8 @@ router.post("/image", upload.single("image"), async (req, res) => {
 });
 
 // GET /upload/serve/:path - serve an uploaded image
-router.get("/serve/*", async (req, res) => {
-  const fileName = req.params[0];
+router.get("/serve/*splat", async (req, res) => {
+  const fileName = req.params.splat;
   const { ok, value, error } = await client.downloadAsBytes(fileName);
 
   if (!ok) {
