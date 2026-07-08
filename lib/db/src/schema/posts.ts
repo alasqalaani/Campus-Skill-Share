@@ -23,6 +23,7 @@ export const postsTable = pgTable("posts", {
   availability: varchar("availability", { length: 200 }),
   priceRate: varchar("price_rate", { length: 100 }),
   university: varchar("university", { length: 200 }),
+  imageUrl: varchar("image_url", { length: 500 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

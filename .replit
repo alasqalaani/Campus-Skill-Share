@@ -26,3 +26,6 @@ channel = "stable-25_05"
 
 [userenv.shared]
 ADMIN_EMAILS = "alasqalaanichubby91@gmail.com"
+
+[objectStorage]
+defaultBucketID = "replit-objstore-2f0aa3d9-dbda-4258-afa5-c64704bdab32"

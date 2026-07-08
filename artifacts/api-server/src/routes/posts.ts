@@ -41,6 +41,7 @@ router.get("/", async (req, res) => {
       availability: postsTable.availability,
       priceRate: postsTable.priceRate,
       university: postsTable.university,
+      imageUrl: postsTable.imageUrl,
       createdAt: postsTable.createdAt,
       authorId: usersTable.id,
       authorDisplayName: usersTable.displayName,
@@ -74,6 +75,7 @@ router.get("/", async (req, res) => {
       availability: p.availability ?? null,
       priceRate: p.priceRate ?? null,
       university: p.university ?? null,
+      imageUrl: p.imageUrl ?? null,
       createdAt: p.createdAt.toISOString(),
       author: {
         id: p.authorId,
@@ -168,7 +170,7 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const { title, category, description, availability, priceRate, university } =
+  const { title, category, description, availability, priceRate, university, imageUrl } =
     req.body;
 
   if (!title || !category || !description) {
@@ -208,6 +210,7 @@ router.post("/", async (req, res) => {
       availability: availability || null,
       priceRate: priceRate || null,
       university: university || null,
+      imageUrl: imageUrl || null,
     })
     .returning();
 

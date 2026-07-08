@@ -6,6 +6,7 @@ import { useCreatePost } from "@workspace/api-client-react";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { Link } from "wouter";
+import { useState } from "react";
 
 const postSchema = z.object({
   title: z
@@ -35,6 +36,9 @@ export default function NewPostPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const createPost = useCreatePost();
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -47,10 +51,52 @@ export default function NewPostPage() {
       university: "",
     },
   });
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
 
-  const onSubmit = (data: PostFormValues) => {
+  const onSubmit = async (data: PostFormValues) => {
+    let imageUrl: string | undefined;
+
+    if (imageFile) {
+      setUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append("image", imageFile);
+        const res = await fetch("/api/upload/image", {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        });
+        const result = await res.json();
+        if (res.ok) {
+          imageUrl = result.imageUrl;
+        } else {
+          toast({
+            title: "Image upload failed",
+            description: result.error,
+            variant: "destructive",
+          });
+          setUploading(false);
+          return;
+        }
+      } catch (err) {
+        toast({
+          title: "Image upload failed",
+          description: "Please try again.",
+          variant: "destructive",
+        });
+        setUploading(false);
+        return;
+      }
+      setUploading(false);
+    }
+
     createPost.mutate(
-      { data },
+      { data: { ...data, imageUrl } },
       {
         onSuccess: () => {
           toast({
@@ -161,6 +207,22 @@ export default function NewPostPage() {
               </p>
             )}
           </div>
+          <div className="space-y-2">
+            <label className="text-sm font-semibold">Photo (Optional)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="w-full text-sm"
+            />
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="mt-2 w-full max-h-64 object-cover rounded-xl border border-border"
+              />
+            )}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
@@ -191,10 +253,15 @@ export default function NewPostPage() {
           <div className="pt-4 border-t border-border/50">
             <button
               type="submit"
-              disabled={createPost.isPending}
+              disabled={uploading || createPost.isPending}
               className="w-full bg-primary text-primary-foreground font-bold text-lg py-4 rounded-xl hover:bg-primary/90 transition-colors disabled:opacity-70 flex items-center justify-center gap-2"
             >
-              {createPost.isPending ? (
+              {uploading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Uploading...
+                </>
+              ) : createPost.isPending ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
                   Posting...
