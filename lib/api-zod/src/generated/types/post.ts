@@ -5,7 +5,7 @@
  * Campus Skill Share API
  * OpenAPI spec version: 0.1.0
  */
-import type { PostAuthor } from './postAuthor';
+import type { PostAuthor } from "./postAuthor";
 
 export interface Post {
   id: string;
@@ -16,6 +16,7 @@ export interface Post {
   availability?: string | null;
   /** @nullable */
   priceRate?: string | null;
+  status: "open" | "completed";
   createdAt: Date;
   author: PostAuthor;
 }

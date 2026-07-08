@@ -1,7 +1,8 @@
 import { useGetPost, getGetPostQueryKey } from "@workspace/api-client-react";
 import { Link, useParams, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Clock, MessageSquare, Tag, Calendar, User } from "lucide-react";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { format } from "date-fns";
@@ -11,10 +12,27 @@ export default function PostDetailPage() {
   const id = params.id as string;
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [, setLocation] = useLocation();
-
+  
   useEffect(() => {
     if (!authLoading && !isAuthenticated) setLocation("/");
   }, [authLoading, isAuthenticated, setLocation]);
+
+  const queryClient = useQueryClient();
+  const [completing, setCompleting] = useState(false);
+
+  const markComplete = async () => {
+    if (!id) return;
+    setCompleting(true);
+    try {
+      const res = await fetch(`/api/posts/${id}/complete`, { method: "PATCH" });
+      if (!res.ok) throw new Error("Failed to mark complete");
+      await queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(id) });
+    } catch (err) {
+      alert("Something went wrong marking this complete. Please try again.");
+    } finally {
+      setCompleting(false);
+    }
+  };
 
   const { data: post, isLoading, error } = useGetPost(id, {
     query: { enabled: !!id && isAuthenticated, queryKey: getGetPostQueryKey(id) }
@@ -131,9 +149,19 @@ export default function PostDetailPage() {
                     Message {post.author.displayName.split(' ')[0]}
                   </Link>
                 ) : (
-                  <div className="w-full bg-muted text-muted-foreground font-medium py-3 px-4 rounded-xl text-center text-sm border border-border">
-                    This is your post
-                  </div>
+                 post.status === "completed" ? (
+                   <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
+                     ✓ Exchange completed
+                   </div>
+                 ) : (
+                   <button
+                     onClick={markComplete}
+                     disabled={completing}
+                     className="w-full bg-primary text-primary-foreground hover:opacity-90 font-bold py-3.5 px-4 rounded-xl transition-all disabled:opacity-50"
+                   >
+                     {completing ? "Marking complete..." : "Mark Exchange Complete"}
+                   </button>
+                 )
                 )}
               </div>
             </div>

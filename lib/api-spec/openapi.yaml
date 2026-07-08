@@ -602,6 +602,9 @@ components:
           type: [string, 'null']
         priceRate:
           type: [string, 'null']
+        status:
+          type: string
+          enum: [open, completed]
         createdAt:
           type: string
           format: date-time
