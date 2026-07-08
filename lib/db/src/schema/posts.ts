@@ -11,6 +11,7 @@ export const categoryEnum = pgEnum("category", [
   "Language",
   "Other",
 ]);
+export const postStatusEnum = pgEnum("post_status", ["open", "completed"]);
 
 export const postsTable = pgTable("posts", {
   id: varchar("id")
@@ -24,6 +25,7 @@ export const postsTable = pgTable("posts", {
   priceRate: varchar("price_rate", { length: 100 }),
   university: varchar("university", { length: 200 }),
   imageUrl: varchar("image_url", { length: 500 }),
+  status: postStatusEnum("status").notNull().default("open"),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -36,6 +38,7 @@ export const postsTable = pgTable("posts", {
 export const insertPostSchema = createInsertSchema(postsTable).omit({
   id: true,
   userId: true,
+  status: true,
   createdAt: true,
   updatedAt: true,
 });

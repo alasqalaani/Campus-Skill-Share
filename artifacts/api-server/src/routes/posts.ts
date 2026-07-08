@@ -170,8 +170,15 @@ router.post("/", async (req, res) => {
     return;
   }
 
-  const { title, category, description, availability, priceRate, university, imageUrl } =
-    req.body;
+  const {
+    title,
+    category,
+    description,
+    availability,
+    priceRate,
+    university,
+    imageUrl,
+  } = req.body;
 
   if (!title || !category || !description) {
     res
@@ -262,6 +269,38 @@ router.delete("/:postId", async (req, res) => {
 
   await db.delete(postsTable).where(eq(postsTable.id, postId));
   res.json({ success: true });
+});
+// PATCH /posts/:postId/complete - mark exchange as complete
+router.patch("/:postId/complete", async (req, res) => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { postId } = req.params;
+  const rows = await db
+    .select()
+    .from(postsTable)
+    .where(eq(postsTable.id, postId));
+
+  if (rows.length === 0) {
+    res.status(404).json({ error: "Post not found" });
+    return;
+  }
+
+  const post = rows[0];
+  if (req.user.role !== "admin" && post.userId !== req.user.id) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(postsTable)
+    .set({ status: "completed" })
+    .where(eq(postsTable.id, postId))
+    .returning();
+
+  res.json({ success: true, post: updated });
 });
 
 export default router;
