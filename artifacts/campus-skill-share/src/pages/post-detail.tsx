@@ -81,6 +81,7 @@ export default function PostDetailPage() {
   }
 
   const isAuthor = user?.id === post.author.id;
+  console.log("Rendering with post.status:", post.status);
 
   return (
     <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
