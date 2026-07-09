@@ -94,6 +94,7 @@ export interface Post {
   /** @nullable */
   university?: string | null;
   createdAt: string;
+  status: 'open' | 'completed';
   author: PostAuthor;
 }
 
