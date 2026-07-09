@@ -27,6 +27,35 @@ export default function PostDetailPage() {
   const queryClient = useQueryClient();
   const [completing, setCompleting] = useState(false);
 
+  const [ratingScore, setRatingScore] = useState(0);
+  const [ratingComment, setRatingComment] = useState("");
+  const [submittingRating, setSubmittingRating] = useState(false);
+  const [ratingSubmitted, setRatingSubmitted] = useState(false);
+  const [authorRatings, setAuthorRatings] = useState<{ average: number | null; total: number } | null>(null);
+
+
+  const submitRating = async () => {
+    if (!id || ratingScore === 0) return;
+    setSubmittingRating(true);
+    try {
+      const res = await fetch("/api/ratings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId: id,
+          score: ratingScore,
+          comment: ratingComment || null,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to submit rating");
+      setRatingSubmitted(true);
+    } catch (err) {
+      alert("Something went wrong submitting your rating. Please try again.");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
+
   const markComplete = async () => {
     if (!id) return;
     setCompleting(true);
@@ -63,6 +92,13 @@ export default function PostDetailPage() {
       </div>
     );
   }
+  useEffect(() => {
+    if (!post?.author?.id) return;
+    fetch(`/api/ratings/user/${post.author.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setAuthorRatings({ average: data.average, total: data.total }))
+      .catch(() => {});
+  }, [post?.author?.id]);
 
   if (error || !post) {
     return (
@@ -175,6 +211,13 @@ export default function PostDetailPage() {
                     {post.author.displayName}
                   </h3>
                   <p className="text-sm text-muted-foreground">Student</p>
+                  <p className="text-sm text-muted-foreground flex items-center justify-center gap-1 mt-1">
+                    {authorRatings && authorRatings.total > 0 ? (
+                      <>★ {authorRatings.average?.toFixed(1)} ({authorRatings.total} rating{authorRatings.total !== 1 ? "s" : ""})</>
+                    ) : (
+                      "No ratings yet"
+                    )}
+                  </p>
                 </div>
 
                 {!isAuthor ? (
@@ -185,12 +228,49 @@ export default function PostDetailPage() {
                     <MessageSquare className="w-5 h-5" />
                     Message {post.author.displayName.split(" ")[0]}
                   </Link>
-                ) : post.status === "completed" ? (
-                  <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
-                    ✓ Exchange completed
-                  </div>
-                ) : (
+      ) : post.status === "completed" ? (
+        <>
+          <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
+            ✓ Exchange completed
+          </div>
+          {user?.id !== post.author.id && !ratingSubmitted && (
+            <div className="mt-3 border border-border rounded-xl p-4">
+              <p className="text-sm font-medium mb-2">Rate this exchange</p>
+              <div className="flex gap-1 mb-3">
+                {[1, 2, 3, 4, 5].map((star) => (
                   <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRatingScore(star)}
+                    className={`text-2xl ${star <= ratingScore ? "text-yellow-400" : "text-muted-foreground"}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={ratingComment}
+                onChange={(e) => setRatingComment(e.target.value)}
+                placeholder="Leave a comment (optional)"
+                className="w-full border border-border rounded-lg p-2 text-sm mb-3"
+                rows={2}
+              />
+              <button
+                onClick={submitRating}
+                disabled={submittingRating || ratingScore === 0}
+                className="w-full bg-primary text-primary-foreground py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
+              >
+                {submittingRating ? "Submitting..." : "Submit Rating"}
+              </button>
+            </div>
+          )}
+          {ratingSubmitted && (
+            <div className="mt-3 text-sm text-muted-foreground text-center">
+              ✓ Thanks for your rating!
+            </div>
+          )}
+        </>
+      ) : (<button
                     onClick={markComplete}
                     disabled={completing}
                     className="w-full bg-primary text-primary-foreground hover:opacity-90 font-bold py-3.5 px-4 rounded-xl transition-all disabled:opacity-50"

@@ -405,7 +405,76 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorEnvelope'
+      /ratings:
+        post:
+          tags: [ratings]
+          operationId: submitRating
+          summary: Submit a rating for a completed exchange
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/RatingSubmit'
+          responses:
+            '201':
+              description: Rating created
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/Rating'
+            '400':
+              description: Invalid rating data
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorEnvelope'
+            '401':
+              description: Not authenticated
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorEnvelope'
+            '404':
+              description: Post not found
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorEnvelope'
+            '409':
+              description: Already rated
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ErrorEnvelope'
 
+      /ratings/user/{userId}:
+        get:
+          tags: [ratings]
+          operationId: getUserRatings
+          summary: Get ratings received by a user
+          parameters:
+            - name: userId
+              in: path
+              required: true
+              schema:
+                type: string
+          responses:
+            '200':
+              description: User ratings
+              content:
+                application/json:
+                  schema:
+                    type: object
+                    properties:
+                      ratings:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Rating'
+                      average:
+                        type: [number, 'null']
+                      total:
+                        type: integer
   /admin/posts:
     get:
       tags: [admin]
@@ -610,7 +679,39 @@ components:
           format: date-time
         author:
           $ref: '#/components/schemas/PostAuthor'
-
+          
+     Rating:
+       type: object
+       required: [id, postId, score, createdAt, rater]
+       properties:
+          id:
+            type: string
+          postId:
+            type: string
+          score:
+            type: integer
+          comment:
+            type: [string, 'null']
+          createdAt:
+            type: string
+          rater:
+            type: object
+       required: [id, displayName]
+       properties:
+          id:
+            type: string
+          displayName:
+            type: string
+    RatingSubmit:
+      type: object
+      required: [postId, score]
+      properties:
+        postId:
+          type: string
+        score:
+          type: integer
+        comment:
+          type: [string, 'null']
     PostInput:
       type: object
       required: [title, category, description]

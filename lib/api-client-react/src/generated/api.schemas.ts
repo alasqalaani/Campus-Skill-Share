@@ -143,6 +143,28 @@ export interface PostStatsResponse {
   total: number;
 }
 
+export interface RatingRater {
+  id: string;
+  displayName: string;
+}
+
+export interface Rating {
+  id: string;
+  postId: string;
+  score: number;
+  /** @nullable */
+  comment?: string | null;
+  createdAt: string;
+  rater: RatingRater;
+}
+
+export interface RatingSubmit {
+  postId: string;
+  score: number;
+  /** @nullable */
+  comment?: string | null;
+}
+
 export interface Message {
   id: string;
   senderId: string;
