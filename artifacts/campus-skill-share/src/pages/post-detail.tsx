@@ -3,7 +3,14 @@ import { Link, useParams, useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useEffect, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Clock, MessageSquare, Tag, Calendar, User } from "lucide-react";
+import {
+  ArrowLeft,
+  Clock,
+  MessageSquare,
+  Tag,
+  Calendar,
+  User,
+} from "lucide-react";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { format } from "date-fns";
 
@@ -12,7 +19,7 @@ export default function PostDetailPage() {
   const id = params.id as string;
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const [, setLocation] = useLocation();
-  
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) setLocation("/");
   }, [authLoading, isAuthenticated, setLocation]);
@@ -24,9 +31,11 @@ export default function PostDetailPage() {
     if (!id) return;
     setCompleting(true);
     try {
+      console.log("Marking complete for id:", id);
       const res = await fetch(`/api/posts/${id}/complete`, { method: "PATCH" });
       if (!res.ok) throw new Error("Failed to mark complete");
       await queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(id) });
+      console.log("Invalidated query for id:", id);
     } catch (err) {
       alert("Something went wrong marking this complete. Please try again.");
     } finally {
@@ -34,8 +43,15 @@ export default function PostDetailPage() {
     }
   };
 
-  const { data: post, isLoading, error } = useGetPost(id, {
-    query: { enabled: !!id && isAuthenticated, queryKey: getGetPostQueryKey(id) }
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useGetPost(id, {
+    query: {
+      enabled: !!id && isAuthenticated,
+      queryKey: getGetPostQueryKey(id),
+    },
   });
 
   if (authLoading || !isAuthenticated) return null;
@@ -54,7 +70,10 @@ export default function PostDetailPage() {
     return (
       <div className="text-center py-20">
         <h2 className="text-2xl font-bold">Post not found</h2>
-        <Link href="/feed" className="text-primary mt-4 inline-block hover:underline">
+        <Link
+          href="/feed"
+          className="text-primary mt-4 inline-block hover:underline"
+        >
           Return to feed
         </Link>
       </div>
@@ -65,7 +84,10 @@ export default function PostDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <Link href="/feed" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+      <Link
+        href="/feed"
+        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
+      >
         <ArrowLeft className="w-4 h-4 mr-1" />
         Back to Feed
       </Link>
@@ -73,10 +95,13 @@ export default function PostDetailPage() {
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
         <div className="p-8 md:p-10">
           <div className="flex flex-wrap items-center gap-3 mb-6">
-            <CategoryBadge category={post.category} className="px-3 py-1 text-sm" />
+            <CategoryBadge
+              category={post.category}
+              className="px-3 py-1 text-sm"
+            />
             <span className="text-muted-foreground text-sm flex items-center gap-1.5">
               <Calendar className="w-4 h-4" />
-              Posted {format(new Date(post.createdAt), 'MMM d, yyyy')}
+              Posted {format(new Date(post.createdAt), "MMM d, yyyy")}
             </span>
           </div>
 
@@ -87,7 +112,9 @@ export default function PostDetailPage() {
           <div className="flex flex-col md:flex-row gap-8">
             <div className="flex-1 space-y-8">
               <div>
-                <h3 className="text-lg font-bold font-display mb-3 text-foreground">About this skill</h3>
+                <h3 className="text-lg font-bold font-display mb-3 text-foreground">
+                  About this skill
+                </h3>
                 <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
                   {post.description}
                 </p>
@@ -100,7 +127,9 @@ export default function PostDetailPage() {
                       <Clock className="w-4 h-4 text-primary" />
                       Availability
                     </div>
-                    <p className="text-muted-foreground text-sm">{post.availability}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {post.availability}
+                    </p>
                   </div>
                 )}
                 {post.priceRate && (
@@ -109,7 +138,9 @@ export default function PostDetailPage() {
                       <Tag className="w-4 h-4 text-primary" />
                       Rate
                     </div>
-                    <p className="text-muted-foreground text-sm">{post.priceRate}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {post.priceRate}
+                    </p>
                   </div>
                 )}
                 {post.university && (
@@ -118,7 +149,9 @@ export default function PostDetailPage() {
                       <User className="w-4 h-4 text-primary" />
                       University
                     </div>
-                    <p className="text-muted-foreground text-sm">{post.university}</p>
+                    <p className="text-muted-foreground text-sm">
+                      {post.university}
+                    </p>
                   </div>
                 )}
               </div>
@@ -129,39 +162,45 @@ export default function PostDetailPage() {
                 <div className="flex flex-col items-center text-center mb-6">
                   <div className="w-20 h-20 rounded-full bg-primary/10 overflow-hidden mb-4 border-2 border-background shadow-sm">
                     {post.author.profileImageUrl ? (
-                      <img src={post.author.profileImageUrl} alt={post.author.displayName} className="w-full h-full object-cover" />
+                      <img
+                        src={post.author.profileImageUrl}
+                        alt={post.author.displayName}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-primary text-primary-foreground text-2xl font-bold">
                         {post.author.displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <h3 className="font-bold text-lg">{post.author.displayName}</h3>
+                  <h3 className="font-bold text-lg">
+                    {post.author.displayName}
+                  </h3>
                   <p className="text-sm text-muted-foreground">Student</p>
                 </div>
 
                 {!isAuthor ? (
-                  <Link 
+                  <Link
                     href={`/chat/${post.author.id}`}
                     className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
                   >
                     <MessageSquare className="w-5 h-5" />
-                    Message {post.author.displayName.split(' ')[0]}
+                    Message {post.author.displayName.split(" ")[0]}
                   </Link>
+                ) : post.status === "completed" ? (
+                  <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
+                    ✓ Exchange completed
+                  </div>
                 ) : (
-                 post.status === "completed" ? (
-                   <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
-                     ✓ Exchange completed
-                   </div>
-                 ) : (
-                   <button
-                     onClick={markComplete}
-                     disabled={completing}
-                     className="w-full bg-primary text-primary-foreground hover:opacity-90 font-bold py-3.5 px-4 rounded-xl transition-all disabled:opacity-50"
-                   >
-                     {completing ? "Marking complete..." : "Mark Exchange Complete"}
-                   </button>
-                 )
+                  <button
+                    onClick={markComplete}
+                    disabled={completing}
+                    className="w-full bg-primary text-primary-foreground hover:opacity-90 font-bold py-3.5 px-4 rounded-xl transition-all disabled:opacity-50"
+                  >
+                    {completing
+                      ? "Marking complete..."
+                      : "Mark Exchange Complete"}
+                  </button>
                 )}
               </div>
             </div>
