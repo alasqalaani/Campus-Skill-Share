@@ -31,11 +31,9 @@ export default function PostDetailPage() {
     if (!id) return;
     setCompleting(true);
     try {
-      console.log("Marking complete for id:", id);
       const res = await fetch(`/api/posts/${id}/complete`, { method: "PATCH" });
       if (!res.ok) throw new Error("Failed to mark complete");
       await queryClient.invalidateQueries({ queryKey: getGetPostQueryKey(id) });
-      console.log("Invalidated query for id:", id);
     } catch (err) {
       alert("Something went wrong marking this complete. Please try again.");
     } finally {
@@ -81,7 +79,6 @@ export default function PostDetailPage() {
   }
 
   const isAuthor = user?.id === post.author.id;
-  console.log("Rendering with post.status:", post.status);
 
   return (
     <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">

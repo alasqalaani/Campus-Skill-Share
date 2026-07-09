@@ -1124,7 +1124,6 @@ export const getPost = async (
     ...options,
     method: "GET",
   });
-  console.log("getPost raw result:", result);
   return result;
 };
 
