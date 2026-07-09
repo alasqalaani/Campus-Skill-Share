@@ -32,7 +32,25 @@ export default function PostDetailPage() {
   const [submittingRating, setSubmittingRating] = useState(false);
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [authorRatings, setAuthorRatings] = useState<{ average: number | null; total: number } | null>(null);
-
+  
+  const {
+    data: post,
+    isLoading,
+    error,
+  } = useGetPost(id, {
+    query: {
+      enabled: !!id && isAuthenticated,
+      queryKey: getGetPostQueryKey(id),
+    },
+  });
+  
+  useEffect(() => {
+    if (!post?.author?.id) return;
+    fetch(`/api/ratings/user/${post.author.id}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => data && setAuthorRatings({ average: data.average, total: data.total }))
+      .catch(() => {});
+  }, [post?.author?.id]);
 
   const submitRating = async () => {
     if (!id || ratingScore === 0) return;
@@ -70,17 +88,7 @@ export default function PostDetailPage() {
     }
   };
 
-  const {
-    data: post,
-    isLoading,
-    error,
-  } = useGetPost(id, {
-    query: {
-      enabled: !!id && isAuthenticated,
-      queryKey: getGetPostQueryKey(id),
-    },
-  });
-
+ 
   if (authLoading || !isAuthenticated) return null;
 
   if (isLoading) {
@@ -92,13 +100,6 @@ export default function PostDetailPage() {
       </div>
     );
   }
-  useEffect(() => {
-    if (!post?.author?.id) return;
-    fetch(`/api/ratings/user/${post.author.id}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => data && setAuthorRatings({ average: data.average, total: data.total }))
-      .catch(() => {});
-  }, [post?.author?.id]);
 
   if (error || !post) {
     return (
