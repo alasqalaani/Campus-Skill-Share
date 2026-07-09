@@ -126,6 +126,7 @@ router.get("/:postId", async (req, res) => {
       priceRate: postsTable.priceRate,
       university: postsTable.university,
       createdAt: postsTable.createdAt,
+      status: postsTable.status,
       authorId: usersTable.id,
       authorDisplayName: usersTable.displayName,
       authorFirstName: usersTable.firstName,
@@ -151,6 +152,7 @@ router.get("/:postId", async (req, res) => {
     priceRate: p.priceRate ?? null,
     university: p.university ?? null,
     createdAt: p.createdAt.toISOString(),
+    status: p.status,
     author: {
       id: p.authorId,
       displayName: resolveDisplayName(
