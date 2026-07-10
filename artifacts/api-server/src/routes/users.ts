@@ -3,17 +3,20 @@ import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
 import { resolveDisplayName } from "../lib/displayName";
+import { getSessionId, getSession } from "../lib/auth";
 
 const router = Router();
 
 // GET /users/me
 router.get("/me", async (req, res) => {
-  if (!req.isAuthenticated()) {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  const rows = await db.select().from(usersTable).where(eq(usersTable.id, req.user.id));
+  const rows = await db.select().from(usersTable).where(eq(usersTable.id, session.user.id));
   if (rows.length === 0) {
     res.status(404).json({ error: "User not found" });
     return;
@@ -32,7 +35,9 @@ router.get("/me", async (req, res) => {
 
 // PATCH /users/me
 router.patch("/me", async (req, res) => {
-  if (!req.isAuthenticated()) {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -47,7 +52,7 @@ router.patch("/me", async (req, res) => {
   const [updated] = await db
     .update(usersTable)
     .set({ displayName: displayName ?? undefined })
-    .where(eq(usersTable.id, req.user.id))
+    .where(eq(usersTable.id, session.user.id))
     .returning();
 
   res.json({

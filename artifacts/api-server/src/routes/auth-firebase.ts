@@ -1,11 +1,21 @@
 import { Router, Request, Response } from "express";
 import { auth } from "../lib/firebase-admin";
+import { db, usersTable } from "@workspace/db";
 import {
   createSession,
   clearSession,
   getSessionId,
   getSession,
 } from "../lib/auth";
+function getAdminEmails(): Set<string> {
+  const raw = process.env.ADMIN_EMAILS ?? "";
+  return new Set(
+    raw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean),
+  );
+}
 
 const router = Router();
 
@@ -31,14 +41,43 @@ router.post("/login", async (req: Request, res: Response) => {
     const decodedToken = await auth.verifyIdToken(idToken);
     const uid = decodedToken.uid;
 
-    // Create user info from Firebase
-    const userInfo = {
+    // Build user data from Firebase claims
+    const userData = {
       id: uid,
       email: decodedToken.email || null,
       firstName: decodedToken.name?.split(" ")[0] || null,
       lastName: decodedToken.name?.split(" ").slice(1).join(" ") || null,
       profileImageUrl: decodedToken.picture || null,
-      role: "student" as const,
+    };
+
+    const adminEmails = getAdminEmails();
+    const isAdmin = userData.email
+      ? adminEmails.has(userData.email.toLowerCase())
+      : false;
+
+    // Insert or update the user in the database
+    const [user] = await db
+      .insert(usersTable)
+      .values({
+        ...userData,
+        ...(isAdmin ? { role: "admin" as const } : {}),
+      })
+      .onConflictDoUpdate({
+        target: usersTable.id,
+        set: {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
+          updatedAt: new Date(),
+          // Promote to admin if in the list; never demote an existing admin
+          ...(isAdmin ? { role: "admin" as const } : {}),
+        },
+      })
+      .returning();
+
+    const userInfo = {
+      ...user,
       displayName: decodedToken.name || null,
     };
 
