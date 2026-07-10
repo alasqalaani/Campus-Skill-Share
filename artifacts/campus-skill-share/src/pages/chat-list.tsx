@@ -2,7 +2,7 @@ import {
   useListConversations,
   getListConversationsQueryKey,
 } from "@workspace/api-client-react";
-import { useAuth } from "@workspace/replit-auth-web";
+import { useAuth } from "../hooks/useAuth";
 import { useEffect } from "react";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";

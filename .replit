@@ -29,3 +29,11 @@ ADMIN_EMAILS = "alasqalaanichubby91@gmail.com"
 
 [objectStorage]
 defaultBucketID = "replit-objstore-2f0aa3d9-dbda-4258-afa5-c64704bdab32"
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 5173
+externalPort = 80

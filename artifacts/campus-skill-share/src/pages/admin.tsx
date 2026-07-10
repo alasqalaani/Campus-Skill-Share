@@ -1,8 +1,22 @@
 import { useState, useEffect } from "react";
-import { useAuth } from "@workspace/replit-auth-web";
-import { useGetMyProfile, useAdminListPosts, useGetAdminStats, useDeletePost, getAdminListPostsQueryKey, getGetAdminStatsQueryKey } from "@workspace/api-client-react";
+import { useAuth } from "../hooks/useAuth";
+import {
+  useGetMyProfile,
+  useAdminListPosts,
+  useGetAdminStats,
+  useDeletePost,
+  getAdminListPostsQueryKey,
+  getGetAdminStatsQueryKey,
+} from "@workspace/api-client-react";
 import { useLocation, Link } from "wouter";
-import { Trash2, ShieldAlert, BarChart3, Users, FileText, Search } from "lucide-react";
+import {
+  Trash2,
+  ShieldAlert,
+  BarChart3,
+  Users,
+  FileText,
+  Search,
+} from "lucide-react";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
@@ -28,27 +42,44 @@ export default function AdminDashboard() {
   const { data: profile, isLoading: profileLoading } = useGetMyProfile();
 
   const { data: stats } = useGetAdminStats({
-    query: { enabled: profile?.role === 'admin', queryKey: getGetAdminStatsQueryKey() }
+    query: {
+      enabled: profile?.role === "admin",
+      queryKey: getGetAdminStatsQueryKey(),
+    },
   });
 
   const queryParams = debouncedSearch ? { search: debouncedSearch } : {};
-  const { data: postsData, isLoading: postsLoading } = useAdminListPosts(queryParams, {
-    query: { enabled: profile?.role === 'admin', queryKey: getAdminListPostsQueryKey(queryParams) }
-  });
+  const { data: postsData, isLoading: postsLoading } = useAdminListPosts(
+    queryParams,
+    {
+      query: {
+        enabled: profile?.role === "admin",
+        queryKey: getAdminListPostsQueryKey(queryParams),
+      },
+    },
+  );
 
   const deletePost = useDeletePost();
 
   if (isLoading || !isAuthenticated) return null;
 
-  if (profileLoading) return <div className="text-center py-20">Loading admin...</div>;
+  if (profileLoading)
+    return <div className="text-center py-20">Loading admin...</div>;
 
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== "admin") {
     return (
       <div className="max-w-md mx-auto mt-20 text-center bg-destructive/10 border border-destructive/20 p-8 rounded-2xl">
         <ShieldAlert className="w-12 h-12 text-destructive mx-auto mb-4" />
-        <h1 className="text-2xl font-bold font-display text-foreground mb-2">Access Denied</h1>
-        <p className="text-muted-foreground mb-6">You need administrator privileges to view this page.</p>
-        <Link href="/feed" className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium">
+        <h1 className="text-2xl font-bold font-display text-foreground mb-2">
+          Access Denied
+        </h1>
+        <p className="text-muted-foreground mb-6">
+          You need administrator privileges to view this page.
+        </p>
+        <Link
+          href="/feed"
+          className="bg-primary text-primary-foreground px-6 py-2.5 rounded-lg font-medium"
+        >
           Return to Feed
         </Link>
       </div>
@@ -56,17 +87,28 @@ export default function AdminDashboard() {
   }
 
   const handleDelete = (postId: string) => {
-    if (confirm("Are you sure you want to delete this post? This cannot be undone.")) {
-      deletePost.mutate({ postId }, {
-        onSuccess: () => {
-          toast({ title: "Post deleted successfully" });
-          queryClient.invalidateQueries({ queryKey: getAdminListPostsQueryKey(queryParams) });
-          queryClient.invalidateQueries({ queryKey: getGetAdminStatsQueryKey() });
+    if (
+      confirm(
+        "Are you sure you want to delete this post? This cannot be undone.",
+      )
+    ) {
+      deletePost.mutate(
+        { postId },
+        {
+          onSuccess: () => {
+            toast({ title: "Post deleted successfully" });
+            queryClient.invalidateQueries({
+              queryKey: getAdminListPostsQueryKey(queryParams),
+            });
+            queryClient.invalidateQueries({
+              queryKey: getGetAdminStatsQueryKey(),
+            });
+          },
+          onError: () => {
+            toast({ title: "Failed to delete post", variant: "destructive" });
+          },
         },
-        onError: () => {
-          toast({ title: "Failed to delete post", variant: "destructive" });
-        }
-      });
+      );
     }
   };
 
@@ -78,7 +120,9 @@ export default function AdminDashboard() {
         </div>
         <div>
           <h1 className="text-3xl font-display font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground mt-1">Platform overview and moderation.</p>
+          <p className="text-muted-foreground mt-1">
+            Platform overview and moderation.
+          </p>
         </div>
       </div>
 
@@ -89,28 +133,42 @@ export default function AdminDashboard() {
             <h3 className="font-semibold text-muted-foreground">Total Users</h3>
             <Users className="w-5 h-5 text-primary" />
           </div>
-          <p className="text-3xl font-bold font-display">{stats?.totalUsers || 0}</p>
+          <p className="text-3xl font-bold font-display">
+            {stats?.totalUsers || 0}
+          </p>
         </div>
         <div className="bg-card border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-muted-foreground">Total Posts</h3>
             <FileText className="w-5 h-5 text-primary" />
           </div>
-          <p className="text-3xl font-bold font-display">{stats?.totalPosts || 0}</p>
+          <p className="text-3xl font-bold font-display">
+            {stats?.totalPosts || 0}
+          </p>
         </div>
         <div className="md:col-span-2 bg-card border border-border rounded-2xl p-5 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-muted-foreground">Posts by Category</h3>
+            <h3 className="font-semibold text-muted-foreground">
+              Posts by Category
+            </h3>
             <BarChart3 className="w-5 h-5 text-primary" />
           </div>
           <div className="flex gap-2 overflow-x-auto pb-1 hide-scrollbar">
-            {stats?.postsByCategory.map(stat => (
-              <div key={stat.category} className="bg-secondary px-3 py-1.5 rounded-lg text-sm whitespace-nowrap flex items-center gap-2 border border-border/50">
-                <span className="font-medium text-foreground">{stat.category}</span>
-                <span className="bg-background px-2 py-0.5 rounded-md font-bold text-xs">{stat.count}</span>
+            {stats?.postsByCategory.map((stat) => (
+              <div
+                key={stat.category}
+                className="bg-secondary px-3 py-1.5 rounded-lg text-sm whitespace-nowrap flex items-center gap-2 border border-border/50"
+              >
+                <span className="font-medium text-foreground">
+                  {stat.category}
+                </span>
+                <span className="bg-background px-2 py-0.5 rounded-md font-bold text-xs">
+                  {stat.count}
+                </span>
               </div>
             ))}
-            {(!stats?.postsByCategory || stats.postsByCategory.length === 0) && (
+            {(!stats?.postsByCategory ||
+              stats.postsByCategory.length === 0) && (
               <span className="text-sm text-muted-foreground">No data</span>
             )}
           </div>
@@ -132,7 +190,7 @@ export default function AdminDashboard() {
             />
           </div>
         </div>
-        
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-muted-foreground uppercase bg-secondary/50 border-b border-border">
@@ -146,7 +204,12 @@ export default function AdminDashboard() {
             <tbody>
               {postsLoading ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-muted-foreground">Loading posts...</td>
+                  <td
+                    colSpan={4}
+                    className="px-6 py-8 text-center text-muted-foreground"
+                  >
+                    Loading posts...
+                  </td>
                 </tr>
               ) : !postsData?.posts || postsData.posts.length === 0 ? (
                 <tr>
@@ -156,25 +219,39 @@ export default function AdminDashboard() {
                 </tr>
               ) : (
                 postsData.posts.map((post) => (
-                  <tr key={post.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                  <tr
+                    key={post.id}
+                    className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors"
+                  >
                     <td className="px-6 py-4">
-                      <div className="font-medium text-foreground mb-1 line-clamp-1 max-w-xs">{post.title}</div>
-                      <CategoryBadge category={post.category} className="text-[10px] px-2 py-0" />
+                      <div className="font-medium text-foreground mb-1 line-clamp-1 max-w-xs">
+                        {post.title}
+                      </div>
+                      <CategoryBadge
+                        category={post.category}
+                        className="text-[10px] px-2 py-0"
+                      />
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary overflow-hidden">
                           {post.author.profileImageUrl ? (
-                            <img src={post.author.profileImageUrl} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={post.author.profileImageUrl}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             post.author.displayName.charAt(0).toUpperCase()
                           )}
                         </div>
-                        <span className="truncate max-w-[120px]">{post.author.displayName}</span>
+                        <span className="truncate max-w-[120px]">
+                          {post.author.displayName}
+                        </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-muted-foreground whitespace-nowrap">
-                      {format(new Date(post.createdAt), 'MMM d, yyyy')}
+                      {format(new Date(post.createdAt), "MMM d, yyyy")}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button

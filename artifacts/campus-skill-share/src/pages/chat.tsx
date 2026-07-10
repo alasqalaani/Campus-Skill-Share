@@ -1,7 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { useGetConversation, useSendMessage, getGetConversationQueryKey } from "@workspace/api-client-react";
-import { useAuth } from "@workspace/replit-auth-web";
+import {
+  useGetConversation,
+  useSendMessage,
+  getGetConversationQueryKey,
+} from "@workspace/api-client-react";
+import { useAuth } from "../hooks/useAuth";
 import { ShieldAlert, Send, ArrowLeft } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -20,8 +24,8 @@ export default function ChatPage() {
     query: {
       enabled: !!otherUserId && isAuthenticated,
       refetchInterval: 3000,
-      queryKey: getGetConversationQueryKey(otherUserId)
-    }
+      queryKey: getGetConversationQueryKey(otherUserId),
+    },
   });
 
   useEffect(() => {
@@ -44,27 +48,37 @@ export default function ChatPage() {
     e.preventDefault();
     if (!content.trim() || sendMessage.isPending) return;
 
-    sendMessage.mutate({
-      data: { receiverId: otherUserId, content: content.trim() }
-    }, {
-      onSuccess: () => {
-        setContent("");
-        // Optimistic invalidation to fetch new message immediately
-        queryClient.invalidateQueries({ queryKey: getGetConversationQueryKey(otherUserId) });
-      }
-    });
+    sendMessage.mutate(
+      {
+        data: { receiverId: otherUserId, content: content.trim() },
+      },
+      {
+        onSuccess: () => {
+          setContent("");
+          // Optimistic invalidation to fetch new message immediately
+          queryClient.invalidateQueries({
+            queryKey: getGetConversationQueryKey(otherUserId),
+          });
+        },
+      },
+    );
   };
 
   return (
     <div className="max-w-4xl mx-auto h-[calc(100vh-12rem)] flex flex-col bg-card border border-border rounded-2xl overflow-hidden shadow-sm animate-in fade-in duration-500">
       {/* Chat Header */}
       <div className="bg-background border-b border-border p-4 flex items-center gap-4 z-10 relative">
-        <Link href="/chats" className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-secondary transition-colors">
+        <Link
+          href="/chats"
+          className="text-muted-foreground hover:text-foreground p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div>
           <h2 className="font-bold font-display text-lg">Conversation</h2>
-          <p className="text-xs text-muted-foreground">End-to-end encrypted on Campus Skill Share</p>
+          <p className="text-xs text-muted-foreground">
+            End-to-end encrypted on Campus Skill Share
+          </p>
         </div>
       </div>
 
@@ -72,14 +86,20 @@ export default function ChatPage() {
       <div className="bg-accent/10 border-b border-accent/20 px-4 py-3 flex items-start gap-3">
         <ShieldAlert className="w-5 h-5 text-accent flex-shrink-0 mt-0.5" />
         <p className="text-sm text-foreground/80 leading-relaxed">
-          <strong className="font-semibold text-foreground">Safety first:</strong> Ready to connect further? Share your WhatsApp number or campus meeting spot when you're comfortable. Do not share financial info.
+          <strong className="font-semibold text-foreground">
+            Safety first:
+          </strong>{" "}
+          Ready to connect further? Share your WhatsApp number or campus meeting
+          spot when you're comfortable. Do not share financial info.
         </p>
       </div>
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-muted-foreground">Loading messages...</div>
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            Loading messages...
+          </div>
         ) : !data?.messages || data.messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-muted-foreground space-y-2">
             <div className="w-16 h-16 bg-secondary rounded-full flex items-center justify-center mb-2">
@@ -91,29 +111,34 @@ export default function ChatPage() {
         ) : (
           data.messages.map((msg, idx) => {
             const isMe = msg.senderId === user?.id;
-            const showDate = idx === 0 || new Date(msg.createdAt).getDate() !== new Date(data.messages[idx - 1].createdAt).getDate();
-            
+            const showDate =
+              idx === 0 ||
+              new Date(msg.createdAt).getDate() !==
+                new Date(data.messages[idx - 1].createdAt).getDate();
+
             return (
               <div key={msg.id} className="space-y-4">
                 {showDate && (
                   <div className="flex justify-center my-6">
                     <span className="text-xs font-medium bg-secondary text-muted-foreground px-3 py-1 rounded-full border border-border/50">
-                      {format(new Date(msg.createdAt), 'MMM d, yyyy')}
+                      {format(new Date(msg.createdAt), "MMM d, yyyy")}
                     </span>
                   </div>
                 )}
-                <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                  <div 
+                <div
+                  className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
+                >
+                  <div
                     className={`max-w-[75%] px-4 py-2.5 rounded-2xl text-[15px] leading-relaxed ${
-                      isMe 
-                        ? 'bg-primary text-primary-foreground rounded-br-sm' 
-                        : 'bg-card border border-border text-foreground rounded-bl-sm shadow-sm'
+                      isMe
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
+                        : "bg-card border border-border text-foreground rounded-bl-sm shadow-sm"
                     }`}
                   >
                     {msg.content}
                   </div>
                   <span className="text-[11px] text-muted-foreground mt-1.5 px-1 font-medium">
-                    {format(new Date(msg.createdAt), 'h:mm a')}
+                    {format(new Date(msg.createdAt), "h:mm a")}
                   </span>
                 </div>
               </div>
