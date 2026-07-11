@@ -13,7 +13,6 @@ router.get("/", async (req: Request, res: Response) => {
     return res.status(401).json({ error: "Unauthorized" });
   }
 
-  // Direct SQL using the underlying Postgres client
   const result = await db.$client.query(
     `SELECT id, display_name, first_name, last_name, profile_image_url, university
      FROM users
@@ -30,6 +29,36 @@ router.get("/", async (req: Request, res: Response) => {
   }));
 
   return res.json({ users });
+});
+
+// ✅ NEW: GET /api/users/:userId - get a specific user by ID (for public profile)
+router.get("/:userId", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
+  const userId = req.params.userId;
+
+  const result = await db.$client.query(
+    `SELECT id, display_name, first_name, last_name, profile_image_url, university
+     FROM users
+     WHERE id = $1`,
+    [userId],
+  );
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const u = result.rows[0];
+  return res.json({
+    id: u.id,
+    displayName: resolveDisplayName(u.display_name, u.first_name, u.last_name),
+    profileImageUrl: u.profile_image_url ?? null,
+    university: u.university ?? null,
+  });
 });
 
 // GET /api/users/me - current user profile
@@ -78,7 +107,6 @@ router.patch("/me", async (req: Request, res: Response) => {
   const { firstName, lastName, displayName, profileImageUrl, university } =
     req.body;
 
-  // Build dynamic UPDATE query
   const updates: string[] = [];
   const values: any[] = [];
   let paramIndex = 1;
@@ -118,7 +146,6 @@ router.patch("/me", async (req: Request, res: Response) => {
     return res.status(400).json({ error: "No fields to update" });
   }
 
-  // Add userId to values for WHERE clause
   values.push(userId);
 
   const query = `
