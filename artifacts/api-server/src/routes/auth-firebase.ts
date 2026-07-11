@@ -63,7 +63,7 @@ router.post("/login", async (req: Request, res: Response) => {
         ...(isAdmin ? { role: "admin" as const } : {}),
       })
       .onConflictDoUpdate({
-        target: usersTable.id,
+        target: usersTable.email,
         set: {
           email: userData.email,
           firstName: userData.firstName,
