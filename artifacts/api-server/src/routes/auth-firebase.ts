@@ -93,7 +93,7 @@ router.post("/login", async (req: Request, res: Response) => {
       path: "/",
     });
 
-    return res.json({ success: true, user: userInfo });
+    return res.json({ success: true, user: userInfo, sid });
   } catch (error) {
     console.error("Login error:", error);
     return res.status(401).json({ error: "Invalid token" });

@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { auth, signInWithGoogle } from "../lib/firebase-client";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-const API_BASE =
-  "https://256ee886-2ffb-4963-a20b-0ae30b1b0b52-00-2npiwxq4vnggb.picard.replit.dev:3000";
+
+const API_BASE = "";
 
 interface User {
   id: string;
@@ -39,6 +39,9 @@ export function useAuth() {
         });
         if (response.ok) {
           const data = await response.json();
+          if (data.sid) {
+            localStorage.setItem("sid", data.sid);
+          }
           setState({
             user: data.user,
             isAuthenticated: true,
@@ -66,6 +69,9 @@ export function useAuth() {
       });
       if (response.ok) {
         const data = await response.json();
+        if (data.sid) {
+          localStorage.setItem("sid", data.sid);
+        }
         setState({ user: data.user, isAuthenticated: true, isLoading: false });
       }
     } catch (error) {
@@ -75,6 +81,7 @@ export function useAuth() {
 
   const logout = async () => {
     await signOut(auth);
+    localStorage.removeItem("sid");
     await fetch(`${API_BASE}/api/auth/logout`, {
       method: "POST",
       credentials: "include",
