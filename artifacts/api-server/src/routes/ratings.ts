@@ -107,5 +107,53 @@ router.get("/user/:userId", async (req, res) => {
 
   res.json({ ratings, average, total: ratings.length });
 });
+// GET /api/ratings/post/:postId - get all ratings for a post
+router.get("/post/:postId", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
 
+  const postId = req.params.postId;
+
+  const result = await db.$client.query(
+    `SELECT r.id, r.score, r.comment, r.created_at,
+            u.id as user_id, u.display_name, u.profile_image_url
+     FROM ratings r
+     JOIN users u ON r.user_id = u.id
+     WHERE r.post_id = $1
+     ORDER BY r.created_at DESC`,
+    [postId],
+  );
+
+  const ratings = result.rows.map((row: any) => ({
+    id: row.id,
+    score: row.score,
+    comment: row.comment,
+    createdAt:
+      row.created_at instanceof Date
+        ? row.created_at.toISOString()
+        : row.created_at,
+    user: {
+      id: row.user_id,
+      displayName: row.display_name,
+      profileImageUrl: row.profile_image_url,
+    },
+  }));
+
+  const avgResult = await db.$client.query(
+    `SELECT AVG(score) as average, COUNT(*) as total
+     FROM ratings
+     WHERE post_id = $1`,
+    [postId],
+  );
+
+  const average = avgResult.rows[0]?.average
+    ? parseFloat(avgResult.rows[0].average)
+    : null;
+  const total = parseInt(avgResult.rows[0]?.total || "0", 10);
+
+  return res.json({ average, total, ratings });
+});
 export default router;

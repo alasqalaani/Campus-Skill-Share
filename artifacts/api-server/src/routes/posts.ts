@@ -1,13 +1,19 @@
-import { Router } from "express";
-import { db } from "@workspace/db";
-import { postsTable, usersTable } from "@workspace/db";
+import { Router, Request, Response } from "express";
+import { db, postsTable, usersTable } from "@workspace/db";
 import { eq, desc, and, count } from "drizzle-orm";
 import { resolveDisplayName } from "../lib/displayName";
+import { getSessionId, getSession } from "../lib/auth";
 
 const router = Router();
 
 // GET /posts - list posts with optional search/category filter
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   const {
     search,
     category,
@@ -50,7 +56,7 @@ router.get("/", async (req, res) => {
       authorProfileImageUrl: usersTable.profileImageUrl,
     })
     .from(postsTable)
-    .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
+    .innerJoin(usersTable, eq(postsTable.authorId, usersTable.id))
     .orderBy(desc(postsTable.createdAt))
     .limit(parseInt(limit))
     .offset(parseInt(offset));
@@ -88,11 +94,17 @@ router.get("/", async (req, res) => {
       },
     }));
 
-  res.json({ posts, total: posts.length });
+  return res.json({ posts, total: posts.length });
 });
 
 // GET /posts/stats - category breakdown
-router.get("/stats", async (req, res) => {
+router.get("/stats", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+
   const stats = await db
     .select({
       category: postsTable.category,
@@ -103,7 +115,7 @@ router.get("/stats", async (req, res) => {
 
   const total = stats.reduce((sum, s) => sum + Number(s.count), 0);
 
-  res.json({
+  return res.json({
     categories: stats.map((s) => ({
       category: s.category,
       count: Number(s.count),
@@ -112,64 +124,58 @@ router.get("/stats", async (req, res) => {
   });
 });
 
-// GET /posts/:postId - single post
-router.get("/:postId", async (req, res) => {
-  const { postId } = req.params;
-
-  const rows = await db
-    .select({
-      id: postsTable.id,
-      title: postsTable.title,
-      category: postsTable.category,
-      description: postsTable.description,
-      availability: postsTable.availability,
-      priceRate: postsTable.priceRate,
-      university: postsTable.university,
-      createdAt: postsTable.createdAt,
-      status: postsTable.status,
-      authorId: usersTable.id,
-      authorDisplayName: usersTable.displayName,
-      authorFirstName: usersTable.firstName,
-      authorLastName: usersTable.lastName,
-      authorProfileImageUrl: usersTable.profileImageUrl,
-    })
-    .from(postsTable)
-    .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
-    .where(eq(postsTable.id, postId));
-
-  if (rows.length === 0) {
-    res.status(404).json({ error: "Post not found" });
-    return;
+// GET /posts/:id - get a single post by ID (using raw SQL)
+router.get("/:id", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
-  const p = rows[0];
-  res.json({
-    id: p.id,
-    title: p.title,
-    category: p.category,
-    description: p.description,
-    availability: p.availability ?? null,
-    priceRate: p.priceRate ?? null,
-    university: p.university ?? null,
-    createdAt: p.createdAt.toISOString(),
-    status: p.status,
+  const postId = req.params.id;
+
+  const result = await db.$client.query(
+    `SELECT p.id, p.title, p.description, p.category, p.availability, p.price_rate, p.university, p.image_url, p.created_at, p.status,
+            u.id as author_id, u.display_name as author_display_name, u.profile_image_url as author_profile_image_url
+     FROM posts p
+     JOIN users u ON p.author_id = u.id
+     WHERE p.id = $1`,
+    [postId],
+  );
+
+  if (result.rows.length === 0) {
+    return res.status(404).json({ error: "Post not found" });
+  }
+
+  const row = result.rows[0];
+  return res.json({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    category: row.category,
+    availability: row.availability,
+    priceRate: row.price_rate,
+    university: row.university,
+    imageUrl: row.image_url,
+    createdAt:
+      row.created_at instanceof Date
+        ? row.created_at.toISOString()
+        : row.created_at,
+    status: row.status,
     author: {
-      id: p.authorId,
-      displayName: resolveDisplayName(
-        p.authorDisplayName,
-        p.authorFirstName,
-        p.authorLastName,
-      ),
-      profileImageUrl: p.authorProfileImageUrl ?? null,
+      id: row.author_id,
+      displayName: row.author_display_name,
+      profileImageUrl: row.author_profile_image_url,
     },
   });
 });
 
-// POST /posts - create post
-router.post("/", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+// POST /posts - create a new post
+router.post("/", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const {
@@ -183,17 +189,15 @@ router.post("/", async (req, res) => {
   } = req.body;
 
   if (!title || !category || !description) {
-    res
+    return res
       .status(400)
       .json({ error: "title, category, and description are required" });
-    return;
   }
 
   if (description.length < 20) {
-    res
+    return res
       .status(400)
       .json({ error: "Description must be at least 20 characters" });
-    return;
   }
 
   const validCategories = [
@@ -205,14 +209,13 @@ router.post("/", async (req, res) => {
     "Other",
   ];
   if (!validCategories.includes(category)) {
-    res.status(400).json({ error: "Invalid category" });
-    return;
+    return res.status(400).json({ error: "Invalid category" });
   }
 
   const [post] = await db
     .insert(postsTable)
     .values({
-      userId: req.user.id,
+      authorId: session.user.id,
       title,
       category,
       description,
@@ -223,8 +226,8 @@ router.post("/", async (req, res) => {
     })
     .returning();
 
-  const user = req.user;
-  res.status(201).json({
+  const user = session.user;
+  return res.status(201).json({
     id: post.id,
     title: post.title,
     category: post.category,
@@ -246,10 +249,11 @@ router.post("/", async (req, res) => {
 });
 
 // DELETE /posts/:postId - delete post (admin or owner)
-router.delete("/:postId", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+router.delete("/:postId", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { postId } = req.params;
@@ -259,24 +263,24 @@ router.delete("/:postId", async (req, res) => {
     .where(eq(postsTable.id, postId));
 
   if (rows.length === 0) {
-    res.status(404).json({ error: "Post not found" });
-    return;
+    return res.status(404).json({ error: "Post not found" });
   }
 
   const post = rows[0];
-  if (req.user.role !== "admin" && post.userId !== req.user.id) {
-    res.status(403).json({ error: "Forbidden" });
-    return;
+  if (session.user.role !== "admin" && post.authorId !== session.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
   }
 
   await db.delete(postsTable).where(eq(postsTable.id, postId));
-  res.json({ success: true });
+  return res.json({ success: true });
 });
+
 // PATCH /posts/:postId/complete - mark exchange as complete
-router.patch("/:postId/complete", async (req, res) => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
+router.patch("/:postId/complete", async (req: Request, res: Response) => {
+  const sid = getSessionId(req);
+  const session = sid ? await getSession(sid) : null;
+  if (!session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   const { postId } = req.params;
@@ -286,14 +290,12 @@ router.patch("/:postId/complete", async (req, res) => {
     .where(eq(postsTable.id, postId));
 
   if (rows.length === 0) {
-    res.status(404).json({ error: "Post not found" });
-    return;
+    return res.status(404).json({ error: "Post not found" });
   }
 
   const post = rows[0];
-  if (req.user.role !== "admin" && post.userId !== req.user.id) {
-    res.status(403).json({ error: "Forbidden" });
-    return;
+  if (session.user.role !== "admin" && post.authorId !== session.user.id) {
+    return res.status(403).json({ error: "Forbidden" });
   }
 
   const [updated] = await db
@@ -302,7 +304,7 @@ router.patch("/:postId/complete", async (req, res) => {
     .where(eq(postsTable.id, postId))
     .returning();
 
-  res.json({ success: true, post: updated });
+  return res.json({ success: true, post: updated });
 });
 
 export default router;
