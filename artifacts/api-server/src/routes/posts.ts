@@ -49,14 +49,14 @@ router.get("/", async (req: Request, res: Response) => {
       university: postsTable.university,
       imageUrl: postsTable.imageUrl,
       createdAt: postsTable.createdAt,
-      authorId: usersTable.id,
+      authorId: usersTable.id, // ← renamed from authorId to authorId (alias)
       authorDisplayName: usersTable.displayName,
       authorFirstName: usersTable.firstName,
       authorLastName: usersTable.lastName,
       authorProfileImageUrl: usersTable.profileImageUrl,
     })
     .from(postsTable)
-    .innerJoin(usersTable, eq(postsTable.authorId, usersTable.id))
+    .innerJoin(usersTable, eq(postsTable.userId, usersTable.id)) // ← FIX: using userId
     .orderBy(desc(postsTable.createdAt))
     .limit(parseInt(limit))
     .offset(parseInt(offset));
@@ -138,7 +138,7 @@ router.get("/:id", async (req: Request, res: Response) => {
     `SELECT p.id, p.title, p.description, p.category, p.availability, p.price_rate, p.university, p.image_url, p.created_at, p.status,
             u.id as author_id, u.display_name as author_display_name, u.profile_image_url as author_profile_image_url
      FROM posts p
-     JOIN users u ON p.author_id = u.id
+     JOIN users u ON p.user_id = u.id   -- ← FIX: using user_id
      WHERE p.id = $1`,
     [postId],
   );
@@ -215,7 +215,7 @@ router.post("/", async (req: Request, res: Response) => {
   const [post] = await db
     .insert(postsTable)
     .values({
-      authorId: session.user.id,
+      userId: session.user.id, // ← FIX: using userId
       title,
       category,
       description,
@@ -267,7 +267,7 @@ router.delete("/:postId", async (req: Request, res: Response) => {
   }
 
   const post = rows[0];
-  if (session.user.role !== "admin" && post.authorId !== session.user.id) {
+  if (session.user.role !== "admin" && post.userId !== session.user.id) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
@@ -294,7 +294,7 @@ router.patch("/:postId/complete", async (req: Request, res: Response) => {
   }
 
   const post = rows[0];
-  if (session.user.role !== "admin" && post.authorId !== session.user.id) {
+  if (session.user.role !== "admin" && post.userId !== session.user.id) {
     return res.status(403).json({ error: "Forbidden" });
   }
 
