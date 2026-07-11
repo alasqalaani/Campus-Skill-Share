@@ -373,6 +373,7 @@ export async function customFetch<T = unknown>(
 
   const requestInfo = { method, url: resolveUrl(input) };
 
+  // force rebuild
   const response = await fetch(input, {
     ...init,
     method,
