@@ -55,6 +55,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
             >
               Chats
             </Link>
+            {/* === NEW: Explore People === */}
+            <Link
+              to="/users"
+              className="text-sm font-medium hover:text-primary transition-colors"
+            >
+              Explore People
+            </Link>
             {profile?.role === "admin" && (
               <Link
                 to="/admin"
@@ -138,6 +145,13 @@ export function AppLayout({ children }: { children: ReactNode }) {
                 className="text-sm font-medium hover:text-primary transition-colors"
               >
                 Chats
+              </Link>
+              {/* === NEW: Explore People (mobile) === */}
+              <Link
+                to="/users"
+                className="text-sm font-medium hover:text-primary transition-colors"
+              >
+                Explore People
               </Link>
               {profile?.role === "admin" && (
                 <Link

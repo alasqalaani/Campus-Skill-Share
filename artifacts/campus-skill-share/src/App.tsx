@@ -13,6 +13,7 @@ import ChatListPage from "./pages/chat-list";
 import ProfilePage from "./pages/profile";
 import AdminDashboard from "./pages/admin";
 import NotFound from "./pages/not-found";
+import UsersDirectoryPage from "./pages/users-directory";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -35,6 +36,7 @@ function Router() {
         <Route path="/chat/:userId" component={ChatPage} />
         <Route path="/profile" component={ProfilePage} />
         <Route path="/admin" component={AdminDashboard} />
+        <Route path="/users" component={UsersDirectoryPage} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
