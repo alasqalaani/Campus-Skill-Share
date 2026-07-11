@@ -14,6 +14,7 @@ import ProfilePage from "./pages/profile";
 import AdminDashboard from "./pages/admin";
 import NotFound from "./pages/not-found";
 import UsersDirectoryPage from "./pages/users-directory";
+import UserPostsPage from "./pages/user-posts";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -37,6 +38,7 @@ function Router() {
         <Route path="/profile" component={ProfilePage} />
         <Route path="/admin" component={AdminDashboard} />
         <Route path="/users" component={UsersDirectoryPage} />
+        <Route path="/user/:userId" component={UserPostsPage} />
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
