@@ -355,43 +355,49 @@ export default function PostDetailPage() {
                       ✓ Exchange completed
                     </div>
 
-                    {!isAuthor && !ratingSubmitted && (
-                      <div className="mt-3 border border-border rounded-xl p-4">
-                        <p className="text-sm font-medium mb-2">
-                          Rate this exchange
-                        </p>
-                        <div className="flex gap-1 mb-3">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <button
-                              key={star}
-                              type="button"
-                              onClick={() => setRatingScore(star)}
-                              className={`text-2xl ${
-                                star <= ratingScore
-                                  ? "text-yellow-400"
-                                  : "text-muted-foreground"
-                              }`}
-                            >
-                              ★
-                            </button>
-                          ))}
+                    {!isAuthor &&
+                      !ratingSubmitted &&
+                      !postRatings?.ratings?.some(
+                        (r) => r.user.id === user?.id,
+                      ) && (
+                        <div className="mt-3 border border-border rounded-xl p-4">
+                          <p className="text-sm font-medium mb-2">
+                            Rate this exchange
+                          </p>
+                          <div className="flex gap-1 mb-3">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <button
+                                key={star}
+                                type="button"
+                                onClick={() => setRatingScore(star)}
+                                className={`text-2xl ${
+                                  star <= ratingScore
+                                    ? "text-yellow-400"
+                                    : "text-muted-foreground"
+                                }`}
+                              >
+                                ★
+                              </button>
+                            ))}
+                          </div>
+                          <textarea
+                            value={ratingComment}
+                            onChange={(e) => setRatingComment(e.target.value)}
+                            placeholder="Leave a comment (optional)"
+                            className="w-full border border-border rounded-lg p-2 text-sm mb-3"
+                            rows={2}
+                          />
+                          <button
+                            onClick={submitRating}
+                            disabled={submittingRating || ratingScore === 0}
+                            className="w-full bg-primary text-primary-foreground py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
+                          >
+                            {submittingRating
+                              ? "Submitting..."
+                              : "Submit Rating"}
+                          </button>
                         </div>
-                        <textarea
-                          value={ratingComment}
-                          onChange={(e) => setRatingComment(e.target.value)}
-                          placeholder="Leave a comment (optional)"
-                          className="w-full border border-border rounded-lg p-2 text-sm mb-3"
-                          rows={2}
-                        />
-                        <button
-                          onClick={submitRating}
-                          disabled={submittingRating || ratingScore === 0}
-                          className="w-full bg-primary text-primary-foreground py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
-                        >
-                          {submittingRating ? "Submitting..." : "Submit Rating"}
-                        </button>
-                      </div>
-                    )}
+                      )}
 
                     {ratingSubmitted && (
                       <div className="mt-3 text-sm text-muted-foreground text-center">
