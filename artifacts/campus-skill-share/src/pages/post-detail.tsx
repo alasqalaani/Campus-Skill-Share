@@ -231,20 +231,15 @@ export default function PostDetailPage() {
                   </p>
                 </div>
 
-                {!isAuthor ? (
-                  <Link
-                    href={`/chat/${post.author.id}`}
-                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
-                  >
-                    <MessageSquare className="w-5 h-5" />
-                    Message {post.author.displayName.split(" ")[0]}
-                  </Link>
-                ) : post.status === "completed" ? (
+                {/* === FIXED LOGIC STARTS HERE === */}
+                {post.status === "completed" ? (
                   <>
                     <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
                       ✓ Exchange completed
                     </div>
-                    {user?.id !== post.author?.id && !ratingSubmitted && (
+
+                    {/* Only show rating UI if user is NOT the author and hasn't rated yet */}
+                    {!isAuthor && !ratingSubmitted && (
                       <div className="mt-3 border border-border rounded-xl p-4">
                         <p className="text-sm font-medium mb-2">
                           Rate this exchange
@@ -277,13 +272,15 @@ export default function PostDetailPage() {
                         </button>
                       </div>
                     )}
+
                     {ratingSubmitted && (
                       <div className="mt-3 text-sm text-muted-foreground text-center">
                         ✓ Thanks for your rating!
                       </div>
                     )}
                   </>
-                ) : (
+                ) : // Post is NOT completed
+                isAuthor ? (
                   <button
                     onClick={markComplete}
                     disabled={completing}
@@ -293,7 +290,16 @@ export default function PostDetailPage() {
                       ? "Marking complete..."
                       : "Mark Exchange Complete"}
                   </button>
+                ) : (
+                  <Link
+                    href={`/chat/${post.author.id}`}
+                    className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] shadow-sm"
+                  >
+                    <MessageSquare className="w-5 h-5" />
+                    Message {post.author.displayName.split(" ")[0]}
+                  </Link>
                 )}
+                {/* === FIXED LOGIC ENDS HERE === */}
               </div>
             </div>
           </div>
