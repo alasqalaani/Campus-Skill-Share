@@ -244,7 +244,7 @@ export default function PostDetailPage() {
                     <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
                       ✓ Exchange completed
                     </div>
-                    {user?.id !== post.author.id && !ratingSubmitted && (
+                    {user?.id !== post.author?.id && !ratingSubmitted && (
                       <div className="mt-3 border border-border rounded-xl p-4">
                         <p className="text-sm font-medium mb-2">
                           Rate this exchange
