@@ -1,34 +1,42 @@
-import { sql } from 'drizzle-orm';
-import { index, jsonb, pgEnum, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
+import { sql } from "drizzle-orm";
+import {
+  index,
+  jsonb,
+  pgEnum,
+  pgTable,
+  timestamp,
+  varchar,
+} from "drizzle-orm/pg-core";
 
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 export const sessionsTable = pgTable(
-  'sessions',
+  "sessions",
   {
-    sid: varchar('sid').primaryKey(),
-    sess: jsonb('sess').notNull(),
-    expire: timestamp('expire').notNull(),
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
   },
-  (table) => [index('IDX_session_expire').on(table.expire)],
+  (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-export const roleEnum = pgEnum('role', ['student', 'admin']);
+export const roleEnum = pgEnum("role", ["student", "admin"]);
 
 // (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
-export const usersTable = pgTable('users', {
-  id: varchar('id')
+export const usersTable = pgTable("users", {
+  id: varchar("id")
     .primaryKey()
     .default(sql`gen_random_uuid()`),
-  email: varchar('email').unique(),
-  firstName: varchar('first_name'),
-  lastName: varchar('last_name'),
-  profileImageUrl: varchar('profile_image_url'),
-  displayName: varchar('display_name'),
-  role: roleEnum('role').notNull().default('student'),
-  createdAt: timestamp('created_at', { withTimezone: true })
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  displayName: varchar("display_name"),
+  university: varchar("university"),
+  role: roleEnum("role").notNull().default("student"),
+  createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true })
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
