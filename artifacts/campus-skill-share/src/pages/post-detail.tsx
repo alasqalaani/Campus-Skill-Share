@@ -36,7 +36,6 @@ export default function PostDetailPage() {
     total: number;
   } | null>(null);
 
-  // State for post ratings (to display and to check if user already rated)
   const [postRatings, setPostRatings] = useState<{
     average: number | null;
     total: number;
@@ -64,7 +63,6 @@ export default function PostDetailPage() {
     },
   });
 
-  // Fetch author's average rating (for sidebar)
   useEffect(() => {
     if (!post?.author?.id) return;
     fetch(`/api/ratings/user/${post.author.id}`)
@@ -77,22 +75,30 @@ export default function PostDetailPage() {
       .catch(() => {});
   }, [post?.author?.id]);
 
-  // Fetch ratings for this specific post (to display below description)
-  useEffect(() => {
+  const fetchPostRatings = async () => {
     if (!id) return;
-    fetch(`/api/ratings/post/${id}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data) {
-          setPostRatings({
-            average: data.average,
-            total: data.total,
-            ratings: data.ratings || [],
-          });
+    try {
+      const res = await fetch(`/api/ratings/post/${id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPostRatings({
+          average: data.average,
+          total: data.total,
+          ratings: data.ratings || [],
+        });
+        // Check if current user has already rated
+        if (user?.id && data.ratings?.some((r: any) => r.user.id === user.id)) {
+          setRatingSubmitted(true);
         }
-      })
-      .catch(() => {});
-  }, [id]);
+      }
+    } catch (e) {
+      console.error("Failed to fetch post ratings", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchPostRatings();
+  }, [id, user?.id]);
 
   const submitRating = async () => {
     if (!id || ratingScore === 0) return;
@@ -108,19 +114,10 @@ export default function PostDetailPage() {
         }),
       });
 
-      // Always refresh the ratings list after trying to submit
-      const refreshRes = await fetch(`/api/ratings/post/${id}`);
-      if (refreshRes.ok) {
-        const data = await refreshRes.json();
-        setPostRatings({
-          average: data.average,
-          total: data.total,
-          ratings: data.ratings || [],
-        });
-      }
+      // Refresh ratings after submission
+      await fetchPostRatings();
 
       if (!res.ok) {
-        // If duplicate rating (409), still show success message
         if (res.status === 409) {
           setRatingSubmitted(true);
           return;
@@ -131,6 +128,8 @@ export default function PostDetailPage() {
       setRatingSubmitted(true);
     } catch (err) {
       alert("Something went wrong submitting your rating. Please try again.");
+      // Hide form anyway so user doesn't keep trying
+      setRatingSubmitted(true);
     } finally {
       setSubmittingRating(false);
     }
@@ -177,6 +176,8 @@ export default function PostDetailPage() {
   }
 
   const isAuthor = user?.id === post.author.id;
+  const hasUserRated =
+    postRatings?.ratings?.some((r) => r.user.id === user?.id) || false;
 
   return (
     <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -206,7 +207,6 @@ export default function PostDetailPage() {
           </h1>
 
           <div className="flex flex-col md:flex-row gap-8">
-            {/* Left column: description and ratings */}
             <div className="flex-1 space-y-8">
               <div>
                 <h3 className="text-lg font-bold font-display mb-3 text-foreground">
@@ -217,7 +217,6 @@ export default function PostDetailPage() {
                 </p>
               </div>
 
-              {/* Post Ratings Display */}
               <div>
                 <h3 className="text-lg font-bold font-display mb-3 text-foreground">
                   Ratings
@@ -324,7 +323,6 @@ export default function PostDetailPage() {
               </div>
             </div>
 
-            {/* Right column: author sidebar + actions */}
             <div className="w-full md:w-72 flex-shrink-0">
               <div className="bg-secondary/30 border border-border/50 rounded-2xl p-6 sticky top-24">
                 <div className="flex flex-col items-center text-center mb-6">
@@ -358,58 +356,51 @@ export default function PostDetailPage() {
                   </p>
                 </div>
 
-                {/* Action buttons */}
                 {post.status === "completed" ? (
                   <>
                     <div className="w-full bg-muted text-muted-foreground font-medium py-3.5 px-4 rounded-xl text-center text-sm border border-border">
                       ✓ Exchange completed
                     </div>
 
-                    {/* Rating form - only show if user has NOT already rated */}
-                    {!isAuthor &&
-                      !postRatings?.ratings?.some(
-                        (r) => r.user.id === user?.id,
-                      ) && (
-                        <div className="mt-3 border border-border rounded-xl p-4">
-                          <p className="text-sm font-medium mb-2">
-                            Rate this exchange
-                          </p>
-                          <div className="flex gap-1 mb-3">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <button
-                                key={star}
-                                type="button"
-                                onClick={() => setRatingScore(star)}
-                                className={`text-2xl ${
-                                  star <= ratingScore
-                                    ? "text-yellow-400"
-                                    : "text-muted-foreground"
-                                }`}
-                              >
-                                ★
-                              </button>
-                            ))}
-                          </div>
-                          <textarea
-                            value={ratingComment}
-                            onChange={(e) => setRatingComment(e.target.value)}
-                            placeholder="Leave a comment (optional)"
-                            className="w-full border border-border rounded-lg p-2 text-sm mb-3"
-                            rows={2}
-                          />
-                          <button
-                            onClick={submitRating}
-                            disabled={submittingRating || ratingScore === 0}
-                            className="w-full bg-primary text-primary-foreground py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
-                          >
-                            {submittingRating
-                              ? "Submitting..."
-                              : "Submit Rating"}
-                          </button>
+                    {!isAuthor && !hasUserRated && !ratingSubmitted && (
+                      <div className="mt-3 border border-border rounded-xl p-4">
+                        <p className="text-sm font-medium mb-2">
+                          Rate this exchange
+                        </p>
+                        <div className="flex gap-1 mb-3">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <button
+                              key={star}
+                              type="button"
+                              onClick={() => setRatingScore(star)}
+                              className={`text-2xl ${
+                                star <= ratingScore
+                                  ? "text-yellow-400"
+                                  : "text-muted-foreground"
+                              }`}
+                            >
+                              ★
+                            </button>
+                          ))}
                         </div>
-                      )}
+                        <textarea
+                          value={ratingComment}
+                          onChange={(e) => setRatingComment(e.target.value)}
+                          placeholder="Leave a comment (optional)"
+                          className="w-full border border-border rounded-lg p-2 text-sm mb-3"
+                          rows={2}
+                        />
+                        <button
+                          onClick={submitRating}
+                          disabled={submittingRating || ratingScore === 0}
+                          className="w-full bg-primary text-primary-foreground py-2.5 px-4 rounded-xl transition-all disabled:opacity-50"
+                        >
+                          {submittingRating ? "Submitting..." : "Submit Rating"}
+                        </button>
+                      </div>
+                    )}
 
-                    {ratingSubmitted && (
+                    {(ratingSubmitted || hasUserRated) && (
                       <div className="mt-3 text-sm text-muted-foreground text-center">
                         ✓ Thanks for your rating!
                       </div>
