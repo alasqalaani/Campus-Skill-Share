@@ -49,14 +49,14 @@ router.get("/", async (req: Request, res: Response) => {
       university: postsTable.university,
       imageUrl: postsTable.imageUrl,
       createdAt: postsTable.createdAt,
-      authorId: usersTable.id, // ← renamed from authorId to authorId (alias)
+      authorId: usersTable.id,
       authorDisplayName: usersTable.displayName,
       authorFirstName: usersTable.firstName,
       authorLastName: usersTable.lastName,
       authorProfileImageUrl: usersTable.profileImageUrl,
     })
     .from(postsTable)
-    .innerJoin(usersTable, eq(postsTable.userId, usersTable.id)) // ← FIX: using userId
+    .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
     .orderBy(desc(postsTable.createdAt))
     .limit(parseInt(limit))
     .offset(parseInt(offset));
@@ -124,7 +124,7 @@ router.get("/stats", async (req: Request, res: Response) => {
   });
 });
 
-// GET /posts/:id - get a single post by ID (using raw SQL)
+// GET /posts/:id - get a single post by ID (using Drizzle ORM)
 router.get("/:id", async (req: Request, res: Response) => {
   const sid = getSessionId(req);
   const session = sid ? await getSession(sid) : null;
@@ -134,38 +134,52 @@ router.get("/:id", async (req: Request, res: Response) => {
 
   const postId = req.params.id;
 
-  const result = await db.$client.query(
-    `SELECT p.id, p.title, p.description, p.category, p.availability, p.price_rate, p.university, p.image_url, p.created_at, p.status,
-            u.id as author_id, u.display_name as author_display_name, u.profile_image_url as author_profile_image_url
-     FROM posts p
-     JOIN users u ON p.user_id = u.id   -- ← FIX: using user_id
-     WHERE p.id = $1`,
-    [postId],
-  );
+  const result = await db
+    .select({
+      id: postsTable.id,
+      title: postsTable.title,
+      category: postsTable.category,
+      description: postsTable.description,
+      availability: postsTable.availability,
+      priceRate: postsTable.priceRate,
+      university: postsTable.university,
+      imageUrl: postsTable.imageUrl,
+      createdAt: postsTable.createdAt,
+      status: postsTable.status,
+      authorId: usersTable.id,
+      authorDisplayName: usersTable.displayName,
+      authorFirstName: usersTable.firstName,
+      authorLastName: usersTable.lastName,
+      authorProfileImageUrl: usersTable.profileImageUrl,
+    })
+    .from(postsTable)
+    .innerJoin(usersTable, eq(postsTable.userId, usersTable.id))
+    .where(eq(postsTable.id, postId));
 
-  if (result.rows.length === 0) {
+  if (result.length === 0) {
     return res.status(404).json({ error: "Post not found" });
   }
 
-  const row = result.rows[0];
+  const p = result[0];
   return res.json({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    category: row.category,
-    availability: row.availability,
-    priceRate: row.price_rate,
-    university: row.university,
-    imageUrl: row.image_url,
-    createdAt:
-      row.created_at instanceof Date
-        ? row.created_at.toISOString()
-        : row.created_at,
-    status: row.status,
+    id: p.id,
+    title: p.title,
+    category: p.category,
+    description: p.description,
+    availability: p.availability ?? null,
+    priceRate: p.priceRate ?? null,
+    university: p.university ?? null,
+    imageUrl: p.imageUrl ?? null,
+    createdAt: p.createdAt.toISOString(),
+    status: p.status,
     author: {
-      id: row.author_id,
-      displayName: row.author_display_name,
-      profileImageUrl: row.author_profile_image_url,
+      id: p.authorId,
+      displayName: resolveDisplayName(
+        p.authorDisplayName,
+        p.authorFirstName,
+        p.authorLastName,
+      ),
+      profileImageUrl: p.authorProfileImageUrl ?? null,
     },
   });
 });
@@ -215,7 +229,7 @@ router.post("/", async (req: Request, res: Response) => {
   const [post] = await db
     .insert(postsTable)
     .values({
-      userId: session.user.id, // ← FIX: using userId
+      userId: session.user.id,
       title,
       category,
       description,
