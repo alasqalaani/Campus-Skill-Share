@@ -36,7 +36,7 @@ export default function PostDetailPage() {
     total: number;
   } | null>(null);
 
-  // State for post ratings (to display)
+  // State for post ratings (to display and to check if user already rated)
   const [postRatings, setPostRatings] = useState<{
     average: number | null;
     total: number;
@@ -107,9 +107,8 @@ export default function PostDetailPage() {
           comment: ratingComment || null,
         }),
       });
-      if (!res.ok) throw new Error("Failed to submit rating");
-      setRatingSubmitted(true);
-      // Refresh the post ratings after successful submission
+
+      // Always refresh the ratings list after trying to submit
       const refreshRes = await fetch(`/api/ratings/post/${id}`);
       if (refreshRes.ok) {
         const data = await refreshRes.json();
@@ -119,6 +118,17 @@ export default function PostDetailPage() {
           ratings: data.ratings || [],
         });
       }
+
+      if (!res.ok) {
+        // If duplicate rating (409), still show success message
+        if (res.status === 409) {
+          setRatingSubmitted(true);
+          return;
+        }
+        throw new Error("Failed to submit rating");
+      }
+
+      setRatingSubmitted(true);
     } catch (err) {
       alert("Something went wrong submitting your rating. Please try again.");
     } finally {
@@ -355,8 +365,8 @@ export default function PostDetailPage() {
                       ✓ Exchange completed
                     </div>
 
+                    {/* Rating form - only show if user has NOT already rated */}
                     {!isAuthor &&
-                      !ratingSubmitted &&
                       !postRatings?.ratings?.some(
                         (r) => r.user.id === user?.id,
                       ) && (
