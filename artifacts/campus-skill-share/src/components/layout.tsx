@@ -139,6 +139,14 @@ export function AppLayout({ children }: { children: ReactNode }) {
               >
                 Chats
               </Link>
+              {profile?.role === "admin" && (
+                <Link
+                  to="/admin"
+                  className="text-sm font-medium hover:text-primary transition-colors"
+                >
+                  Admin
+                </Link>
+              )}
               <Link
                 to="/profile"
                 className="text-sm font-medium hover:text-primary transition-colors"
