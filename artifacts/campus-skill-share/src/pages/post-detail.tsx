@@ -10,6 +10,7 @@ import {
   Tag,
   Calendar,
   User,
+  Share2, // ✅ ADDED
 } from "lucide-react";
 import { CategoryBadge } from "@/components/CategoryBadge";
 import { format } from "date-fns";
@@ -149,6 +150,33 @@ export default function PostDetailPage() {
     }
   };
 
+  // ✅ SHARE FUNCTION
+  const handleShare = async () => {
+    const url = window.location.href;
+    const title = post?.title || "Check out this post on Skillet!";
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: `Check out this post: ${title}`,
+          url: url,
+        });
+      } catch (error) {
+        if ((error as Error).name !== "AbortError") {
+          console.error("Share failed", error);
+        }
+      }
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        alert("✅ Link copied to clipboard!");
+      } catch (error) {
+        alert("Could not copy link. Please copy the URL manually.");
+      }
+    }
+  };
+
   if (authLoading || !isAuthenticated) return null;
 
   if (isLoading) {
@@ -181,13 +209,25 @@ export default function PostDetailPage() {
 
   return (
     <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <Link
-        href="/feed"
-        className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors"
-      >
-        <ArrowLeft className="w-4 h-4 mr-1" />
-        Back to Feed
-      </Link>
+      {/* ✅ REPLACED with flex row + Share button */}
+      <div className="flex items-center justify-between mb-6">
+        <Link
+          href="/feed"
+          className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back to Feed
+        </Link>
+
+        <button
+          onClick={handleShare}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors bg-secondary/50 px-3 py-1.5 rounded-full border border-border"
+          aria-label="Share post"
+        >
+          <Share2 className="w-4 h-4" />
+          <span className="hidden sm:inline">Share</span>
+        </button>
+      </div>
 
       <div className="bg-card border border-border rounded-3xl overflow-hidden shadow-sm">
         <div className="p-8 md:p-10">
