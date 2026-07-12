@@ -6,7 +6,7 @@ import { getSessionId, getSession } from "../lib/auth";
 
 const router = Router();
 
-// GET /posts - list posts with optional search/category filter
+// GET /posts - list posts with optional search/category/authorId filter
 router.get("/", async (req: Request, res: Response) => {
   const sid = getSessionId(req);
   const session = sid ? await getSession(sid) : null;
@@ -17,6 +17,7 @@ router.get("/", async (req: Request, res: Response) => {
   const {
     search,
     category,
+    authorId,
     limit = "50",
     offset = "0",
   } = req.query as Record<string, string>;
@@ -36,6 +37,10 @@ router.get("/", async (req: Request, res: Response) => {
           | "Other",
       ),
     );
+  }
+
+  if (authorId) {
+    conditions.push(eq(postsTable.userId, authorId));
   }
 
   let postsQuery = db
